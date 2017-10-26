@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  db:
+    image: mysql/mysql-server:5.7
+    environment:
+      MYSQL_USER: "it-test-user"
+      MYSQL_PASSWORD: "it-test-pw"
+      MYSQL_DATABASE: "it-test-db"
+      MYSQL_ROOT_PASSWORD: "it-test-root-pw"
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/ssl:/etc/mysql
+      - ./mysql/my.cnf:/etc/my.cnf

@@ -15,3 +15,11 @@ libraryDependencies ++= {
     "org.scalatest"       %% "scalatest"            % scalaTestV  % "test"
   )
 }
+
+lazy val ItTest = config("it") extend Test
+
+lazy val root = (project in file("."))
+.configs(ItTest)
+  .settings(
+    inConfig(ItTest)(Seq(Defaults.itSettings: _*))
+  )
