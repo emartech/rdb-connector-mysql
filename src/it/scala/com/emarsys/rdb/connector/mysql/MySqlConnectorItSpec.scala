@@ -48,14 +48,14 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
       }
 
       "connect fail when wrong user" in {
-        val conn = testConnection.copy(user = "")
+        val conn = testConnection.copy(dbUser = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe Left(ErrorWithMessage("Cannot connect to the sql server"))
       }
 
       "connect fail when wrong password" in {
-        val conn = testConnection.copy(password = "")
+        val conn = testConnection.copy(dbPassword = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe Left(ErrorWithMessage("Cannot connect to the sql server"))

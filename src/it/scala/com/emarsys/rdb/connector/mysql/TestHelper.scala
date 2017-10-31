@@ -7,8 +7,8 @@ object TestHelper {
     host = "db",
     port = 3306,
     dbName = "it-test-db",
-    user = "it-test-user",
-    password = "it-test-pw",
+    dbUser = "it-test-user",
+    dbPassword = "it-test-pw",
     certificate = """-----BEGIN CERTIFICATE-----
                     |MIIC8DCCAdgCAQIwDQYJKoZIhvcNAQELBQAwPDE6MDgGA1UEAwwxTXlTUUxfU2Vy
                     |dmVyXzUuNy4xN19BdXRvX0dlbmVyYXRlZF9DQV9DZXJ0aWZpY2F0ZTAeFw0xNzEw

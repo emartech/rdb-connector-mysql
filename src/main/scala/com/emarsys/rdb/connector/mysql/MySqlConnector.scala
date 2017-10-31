@@ -28,8 +28,8 @@ object MySqlConnector {
                                     host: String,
                                     port: Int,
                                     dbName: String,
-                                    user: String,
-                                    password: String,
+                                    dbUser: String,
+                                    dbPassword: String,
                                     certificate: String,
                                     connectionParams: String
                                   )
@@ -45,8 +45,8 @@ object MySqlConnector {
     val db = Database.forURL(
       url = url,
       driver = "slick.jdbc.MySQLProfile",
-      user = config.user,
-      password = config.password,
+      user = config.dbUser,
+      password = config.dbPassword,
       prop = prop,
       executor = executor
     )

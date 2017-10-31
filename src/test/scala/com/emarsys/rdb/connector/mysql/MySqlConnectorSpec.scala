@@ -11,8 +11,8 @@ class MySqlConnectorSpec extends WordSpecLike with Matchers {
       host = "host",
       port = 123,
       dbName = "database",
-      user = "me",
-      password = "secret",
+      dbUser = "me",
+      dbPassword = "secret",
       certificate = "cert",
       connectionParams = "?param1=asd"
     )
