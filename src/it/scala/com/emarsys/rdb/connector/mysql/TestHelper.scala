@@ -1,9 +1,15 @@
 package com.emarsys.rdb.connector.mysql
 
-import com.emarsys.rdb.connector.mysql.MySqlConnector.MySqlConnectionConfig
+import java.util.Properties
+
+import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, createUrl}
+import slick.util.AsyncExecutor
+import slick.jdbc.MySQLProfile.api._
+
+import scala.concurrent.Future
 
 object TestHelper {
-  val TEST_CONNECTION = MySqlConnectionConfig(
+  val TEST_CONNECTION_CONFIG = MySqlConnectionConfig(
     host = "db",
     port = 3306,
     dbName = "it-test-db",
@@ -29,4 +35,26 @@ object TestHelper {
                     |-----END CERTIFICATE-----""".stripMargin,
     connectionParams = ""
   )
+
+  private lazy val executor = AsyncExecutor.default()
+  private lazy val db: Database = {
+    val prop = new Properties()
+    prop.setProperty("useSSL", "true")
+    prop.setProperty("serverSslCert", TEST_CONNECTION_CONFIG.certificate)
+
+    val url = createUrl(TEST_CONNECTION_CONFIG)
+
+    Database.forURL(
+      url = url,
+      driver = "slick.jdbc.MySQLProfile",
+      user = TEST_CONNECTION_CONFIG.dbUser,
+      password = TEST_CONNECTION_CONFIG.dbPassword,
+      prop = prop,
+      executor = executor
+    )
+  }
+
+  def executeQuery(sql: String): Future[Int] = {
+    db.run(sqlu"""#$sql""")
+  }
 }

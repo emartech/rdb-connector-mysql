@@ -5,6 +5,8 @@ import java.util.Properties
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Connector
 import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage}
+import com.emarsys.rdb.connector.common.models.TableSchemaDescriptors.{FieldModel, TableModel}
+import com.emarsys.rdb.connector.mysql.Sanitizer._
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
 
@@ -18,6 +20,37 @@ class MySqlConnector(db: Database)(implicit executionContext: ExecutionContext) 
 
   override def testConnection(): ConnectorResponse[Unit] = {
     Future.successful(Right())
+  }
+
+  override def listTables(): ConnectorResponse[Seq[TableModel]] = {
+    db.run(sql"SHOW FULL TABLES".as[(String, String)])
+      .map(_.map(parseToTableModel))
+      .map(Right(_))
+      .recover {
+        case ex => Left(ErrorWithMessage(ex.toString))
+      }
+  }
+
+  override def listFields(tableName: String): ConnectorResponse[Seq[FieldModel]] = {
+    db.run(sql"DESC #${quoteIdentifier(tableName)}".as[(String, String, String, String, String, String)])
+      .map(_.map(parseToFiledModel))
+      .map(Right(_))
+      .recover {
+        case ex => Left(ErrorWithMessage(ex.toString))
+      }
+  }
+
+  private def parseToFiledModel(f: (String, String, String, String, String, String)): FieldModel = {
+    FieldModel(f._1, f._2)
+  }
+
+  private def parseToTableModel(t: (String, String)): TableModel = {
+    TableModel(t._1, isTableTypeView(t._2))
+  }
+
+  private def isTableTypeView(tableType: String): Boolean = tableType match {
+    case "VIEW" => true
+    case _      => false
   }
 
 }

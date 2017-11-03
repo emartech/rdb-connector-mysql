@@ -12,7 +12,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
 
   "MySqlConnectorItSpec" when {
 
-    val testConnection = TestHelper.TEST_CONNECTION
+    val testConnection = TestHelper.TEST_CONNECTION_CONFIG
 
     "create connector" should {
 
