@@ -3,7 +3,7 @@ package com.emarsys.rdb.connector.mysql
 import java.util.UUID
 
 import com.emarsys.rdb.connector.common.models.Connector
-import com.emarsys.rdb.connector.common.models.TableSchemaDescriptors.TableModel
+import com.emarsys.rdb.connector.common.models.TableSchemaDescriptors.{FieldModel, FullTableModel, TableModel}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import slick.util.AsyncExecutor
 
@@ -45,14 +45,32 @@ trait MetadataItSpec extends WordSpecLike with Matchers with BeforeAndAfterAll {
 
     "#listFields" should {
       "list table fields" in {
+        val tableFields = Seq("PersonID", "LastName", "FirstName", "Address", "City").map(_.toLowerCase()).sorted.map(FieldModel(_, ""))
+
         val resultE = Await.result(connector.listFields(tableName), 5.seconds)
 
         resultE shouldBe a[Right[_,_]]
         val result = resultE.right.get
 
-        val fieldNames = result.map(_.name)
+        val fieldModels = result.map(f => f.copy(name = f.name.toLowerCase, columnType = "")).sortBy(_.name)
 
-        fieldNames shouldEqual Seq("PersonID", "LastName", "FirstName", "Address", "City")
+        fieldModels shouldBe tableFields
+      }
+    }
+
+    "#listTablesWithFields" should {
+      "list all" in {
+        val tableFields = Seq("PersonID", "LastName", "FirstName", "Address", "City").map(_.toLowerCase()).sorted.map(FieldModel(_, ""))
+        val viewFields = Seq("PersonID", "LastName", "FirstName").map(_.toLowerCase()).sorted.map(FieldModel(_, ""))
+
+        val resultE = Await.result(connector.listTablesWithFields(), 5.seconds)
+
+        resultE shouldBe a[Right[_,_]]
+        val result = resultE.right.get.map(x => x.copy(fields = x.fields.map(f => f.copy(name = f.name.toLowerCase, columnType = "")).sortBy(_.name)))
+
+
+        result should contain (FullTableModel(tableName, false, tableFields))
+        result should contain (FullTableModel(viewName, true, viewFields))
       }
     }
   }
