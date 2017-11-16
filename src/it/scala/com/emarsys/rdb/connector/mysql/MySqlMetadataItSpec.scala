@@ -8,7 +8,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class MysqlMetadataItSpec extends MetadataItSpec {
+class MySqlMetadataItSpec extends MetadataItSpec {
 
   val connector: Connector = Await.result(MySqlConnector(TestHelper.TEST_CONNECTION_CONFIG)(AsyncExecutor.default()), 5.seconds).right.get
 
