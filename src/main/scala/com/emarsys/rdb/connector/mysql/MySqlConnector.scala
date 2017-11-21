@@ -3,7 +3,7 @@ package com.emarsys.rdb.connector.mysql
 import java.util.Properties
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
-import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage}
+import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage, TableNotFound}
 import com.emarsys.rdb.connector.common.models.{ConnectionConfig, Connector}
 import com.emarsys.rdb.connector.mysql.MySqlConnector.MySqlConnectorConfig
 import slick.jdbc.MySQLProfile.api._
@@ -24,9 +24,9 @@ class MySqlConnector(
     with MySqlSimpleSelect
     with MySqlIsOptimized {
 
-  protected def handleNotExistingTable[T]: PartialFunction[Throwable, ConnectorResponse[T]] = {
+  protected def handleNotExistingTable[T](table: String): PartialFunction[Throwable, ConnectorResponse[T]] = {
     case e: Exception if e.getMessage.contains("doesn't exist") =>
-      Future.successful(Left(ErrorWithMessage(s"Table not found.")))
+      Future.successful(Left(TableNotFound(table)))
   }
 
   override def close(): Future[Unit] = {

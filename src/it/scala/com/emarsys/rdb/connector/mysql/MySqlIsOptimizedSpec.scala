@@ -3,7 +3,7 @@ package com.emarsys.rdb.connector.mysql
 import java.util.UUID
 
 import com.emarsys.rdb.connector.common.models.Connector
-import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
+import com.emarsys.rdb.connector.common.models.Errors.TableNotFound
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import slick.util.AsyncExecutor
 
@@ -124,10 +124,8 @@ class MySqlIsOptimizedSpec extends WordSpecLike with Matchers with BeforeAndAfte
     "table not exists" should {
 
       "fail" in {
-        val resultE = Await.result(connector.isOptimized("nonExisting", Seq("A0")), 5.seconds)
-        resultE shouldBe a[Left[_, _]]
-        val result = resultE.left.get
-        result shouldEqual ErrorWithMessage("Table not found.")
+        val result = Await.result(connector.isOptimized("TABLENAME", Seq("A0")), 5.seconds)
+        result shouldEqual Left(TableNotFound("TABLENAME"))
       }
     }
   }

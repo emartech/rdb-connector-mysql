@@ -24,6 +24,7 @@ trait MySqlMetadata {
     db.run(sql"DESC #${quoteIdentifier(tableName)}".as[(String, String, String, String, String, String)])
       .map(_.map(parseToFiledModel))
       .map(Right(_))
+      .recoverWith(handleNotExistingTable(tableName))
       .recover {
         case ex => Left(ErrorWithMessage(ex.toString))
       }
