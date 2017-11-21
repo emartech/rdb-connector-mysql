@@ -21,7 +21,13 @@ class MySqlConnector(
   extends Connector
     with MySqlTestConnection
     with MySqlMetadata
-    with MySqlSimpleSelect {
+    with MySqlSimpleSelect
+    with MySqlIsOptimized {
+
+  protected def handleNotExistingTable[T]: PartialFunction[Throwable, ConnectorResponse[T]] = {
+    case e: Exception if e.getMessage.contains("doesn't exist") =>
+      Future.successful(Left(ErrorWithMessage(s"Table not found.")))
+  }
 
   override def close(): Future[Unit] = {
     db.shutdown
