@@ -22,6 +22,7 @@ class MySqlConnector(
     with MySqlTestConnection
     with MySqlMetadata
     with MySqlSimpleSelect
+    with MySqlRawSelect
     with MySqlIsOptimized {
 
   protected def handleNotExistingTable[T](table: String): PartialFunction[Throwable, ConnectorResponse[T]] = {
