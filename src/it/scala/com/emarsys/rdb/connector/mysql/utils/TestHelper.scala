@@ -1,10 +1,10 @@
-package com.emarsys.rdb.connector.mysql
+package com.emarsys.rdb.connector.mysql.utils
 
 import java.util.Properties
 
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, createUrl}
-import slick.util.AsyncExecutor
 import slick.jdbc.MySQLProfile.api._
+import slick.util.AsyncExecutor
 
 import scala.concurrent.Future
 

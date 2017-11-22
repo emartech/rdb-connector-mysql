@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
 import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
-import com.emarsys.rdb.connector.mysql.util.SelectDbInitHelper
+import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import concurrent.duration._

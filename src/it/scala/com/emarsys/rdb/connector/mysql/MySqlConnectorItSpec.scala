@@ -1,6 +1,7 @@
 package com.emarsys.rdb.connector.mysql
 
 import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
+import com.emarsys.rdb.connector.mysql.utils.TestHelper
 import org.scalatest.{Matchers, WordSpecLike}
 import slick.util.AsyncExecutor
 

@@ -1,7 +1,7 @@
-package com.emarsys.rdb.connector.mysql.util
+package com.emarsys.rdb.connector.mysql.utils
 
 import com.emarsys.rdb.connector.common.models.Connector
-import com.emarsys.rdb.connector.mysql.{MySqlConnector, TestHelper}
+import com.emarsys.rdb.connector.mysql.MySqlConnector
 import slick.util.AsyncExecutor
 
 import scala.concurrent.Await

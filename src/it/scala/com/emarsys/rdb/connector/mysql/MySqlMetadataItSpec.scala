@@ -1,6 +1,7 @@
 package com.emarsys.rdb.connector.mysql
 
 import com.emarsys.rdb.connector.common.models.Connector
+import com.emarsys.rdb.connector.mysql.utils.TestHelper
 import com.emarsys.rdb.connector.test.MetadataItSpec
 import slick.util.AsyncExecutor
 
