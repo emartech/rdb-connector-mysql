@@ -4,7 +4,7 @@ import java.util.Properties
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage, TableNotFound}
-import com.emarsys.rdb.connector.common.models.{ConnectionConfig, Connector}
+import com.emarsys.rdb.connector.common.models.{ConnectionConfig, Connector, ConnectorCompanion, MetaData}
 import com.emarsys.rdb.connector.mysql.MySqlConnector.MySqlConnectorConfig
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
@@ -35,7 +35,7 @@ class MySqlConnector(
   }
 }
 
-object MySqlConnector {
+object MySqlConnector extends ConnectorCompanion {
 
   case class MySqlConnectionConfig(
                                     host: String,
@@ -84,6 +84,8 @@ object MySqlConnector {
       case _ => Left(ErrorWithMessage("Cannot connect to the sql server"))
     }
   }
+
+  override def meta() = MetaData("`", "'", "\\")
 
   private[mysql] def checkSsl(db: Database)(implicit executionContext: ExecutionContext): Future[Boolean] = {
     db.run(sql"SHOW STATUS LIKE 'ssl_cipher'".as[(String, String)])
