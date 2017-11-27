@@ -83,6 +83,12 @@ class MySqlRawSelectItSpec extends TestKit(ActorSystem()) with SelectDbInitHelpe
         Await.result(connector.validateRawSelect(simpleSelect), awaitTimeout) shouldBe Right()
       }
 
+      "return ok if no ; in query" in {
+        val simpleSelect = s"""SELECT * FROM `$aTableName`"""
+
+        Await.result(connector.validateRawSelect(simpleSelect), awaitTimeout) shouldBe Right()
+      }
+
       "return error if not ok" in {
         val simpleSelect = s"SELECT * ForM `$aTableName`"
 
