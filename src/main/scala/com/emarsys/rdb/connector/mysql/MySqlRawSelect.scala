@@ -4,12 +4,17 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
+import com.emarsys.rdb.connector.common.models.SimpleSelect.FieldName
 import slick.jdbc.MySQLProfile.api._
 
 import scala.annotation.tailrec
 
 trait MySqlRawSelect extends MySqlStreamingQuery {
   self: MySqlConnector =>
+
+  import MySqlWriters._
+  import com.emarsys.rdb.connector.common.defaults.SqlWriter._
+
 
   override def rawSelect(rawSql: String, limit: Option[Int]): ConnectorResponse[Source[Seq[String], NotUsed]] = {
     val limitAsSql = limit.fold(""){ l =>
@@ -30,6 +35,12 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
   override def analyzeRawSelect(rawSql: String): ConnectorResponse[Source[Seq[String], NotUsed]] = {
     val modifiedSql = "EXPLAIN " + removeEndingSemicolons(rawSql)
     streamingQuery(modifiedSql)
+  }
+
+  override def projectedRawSelect(rawSql: String, fields: Seq[String]): ConnectorResponse[Source[Seq[String], NotUsed]] = {
+    val fieldList = fields.map("t." + FieldName(_).toSql).mkString(", ")
+    val projectedSql = s"SELECT $fieldList FROM ( ${removeEndingSemicolons(rawSql)} ) t"
+    streamingQuery(projectedSql)
   }
 
   @tailrec

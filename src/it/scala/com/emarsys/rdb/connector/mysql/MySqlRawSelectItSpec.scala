@@ -109,6 +109,44 @@ class MySqlRawSelectItSpec extends TestKit(ActorSystem()) with SelectDbInitHelpe
         )
       }
     }
+
+    "#projectedRawSelect" should {
+
+      "project one col as expected" in {
+        val simpleSelect = s"""SELECT * FROM `$aTableName`;"""
+
+        val result = getStreamResult(connector.projectedRawSelect(simpleSelect, Seq("A1")))
+
+        checkResultWithoutRowOrder(result, Seq(
+          Seq("A1"),
+          Seq("v1"),
+          Seq("v2"),
+          Seq("v3"),
+          Seq("v4"),
+          Seq("v5"),
+          Seq("v6"),
+          Seq("v7")
+        ))
+
+      }
+
+      "project more col as expected" in {
+        val simpleSelect = s"""SELECT * FROM `$aTableName`;"""
+
+        val result = getStreamResult(connector.projectedRawSelect(simpleSelect, Seq("A2", "A3")))
+
+        checkResultWithoutRowOrder(result, Seq(
+          Seq("A2", "A3"),
+          Seq("1", "1"),
+          Seq("2", "0"),
+          Seq("3", "1"),
+          Seq("-4", "0"),
+          Seq(null, "0"),
+          Seq("6", null),
+          Seq(null, null)
+        ))
+      }
+    }
   }
 
   def checkResultWithoutRowOrder(result: Seq[Seq[String]], expected: Seq[Seq[String]]): Unit = {
