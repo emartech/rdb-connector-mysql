@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
+import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
 import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -45,7 +46,7 @@ class MySqlRawSelectItSpec extends TestKit(ActorSystem()) with SelectDbInitHelpe
       "list table values" in {
         val simpleSelect = s"SELECT * FROM `$aTableName`;"
 
-        val result = getRawSelectResult(simpleSelect, None)
+        val result = getStreamResult(connector.rawSelect(simpleSelect, None))
 
         checkResultWithoutRowOrder(result, Seq(
           Seq("A1", "A2", "A3"),
@@ -64,7 +65,7 @@ class MySqlRawSelectItSpec extends TestKit(ActorSystem()) with SelectDbInitHelpe
 
         val limit = 2
 
-        val result = getRawSelectResult(simpleSelect, Option(limit))
+        val result = getStreamResult(connector.rawSelect(simpleSelect, Option(limit)))
 
         result.size shouldEqual limit+1
       }
@@ -95,6 +96,19 @@ class MySqlRawSelectItSpec extends TestKit(ActorSystem()) with SelectDbInitHelpe
         Await.result(connector.validateRawSelect(simpleSelect), awaitTimeout) shouldBe a [Left[ErrorWithMessage,Unit]]
       }
     }
+
+    "#analyzeRawSelect" should {
+      "return result" in {
+        val simpleSelect = s"SELECT * FROM `$aTableName`;"
+
+        val result = getStreamResult(connector.analyzeRawSelect(simpleSelect))
+
+        result shouldEqual Seq(
+          Seq("id", "select_type", "table", "partitions", "type", "possible_keys", "key", "key_len", "ref", "rows", "filtered", "Extra"),
+          Seq("1", "SIMPLE", s"$aTableName", null, "ALL", null, null, null, null, "7", "100.0", null)
+        )
+      }
+    }
   }
 
   def checkResultWithoutRowOrder(result: Seq[Seq[String]], expected: Seq[Seq[String]]): Unit = {
@@ -103,8 +117,8 @@ class MySqlRawSelectItSpec extends TestKit(ActorSystem()) with SelectDbInitHelpe
     result.foreach(expected contains _)
   }
 
-  def getRawSelectResult(rawSql: String, limit: Option[Int]): Seq[Seq[String]] = {
-    val resultE = Await.result(connector.rawSelect(rawSql, limit), awaitTimeout)
+  def getStreamResult(s: ConnectorResponse[Source[Seq[String], NotUsed]]): Seq[Seq[String]] = {
+    val resultE = Await.result(s, awaitTimeout)
 
     resultE shouldBe a[Right[_, _]]
     val resultStream: Source[Seq[String], NotUsed] = resultE.right.get

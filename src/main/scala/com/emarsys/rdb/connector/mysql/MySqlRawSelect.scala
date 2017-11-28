@@ -27,6 +27,11 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
       }
   }
 
+  override def analyzeRawSelect(rawSql: String): ConnectorResponse[Source[Seq[String], NotUsed]] = {
+    val modifiedSql = "EXPLAIN " + removeEndingSemicolons(rawSql)
+    streamingQuery(modifiedSql)
+  }
+
   @tailrec
   private def removeEndingSemicolons(query: String): String = {
     val qTrimmed = query.trim
