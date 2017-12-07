@@ -22,7 +22,8 @@ trait SelectDbInitHelper {
       s"""CREATE TABLE `$aTableName` (
          |    A1 varchar(255) NOT NULL,
          |    A2 int,
-         |    A3 tinyint(1)
+         |    A3 tinyint(1),
+         |    PRIMARY KEY (A1)
          |);""".stripMargin
 
     val createBTableSql =
@@ -52,11 +53,15 @@ trait SelectDbInitHelper {
          |('b $$4', 'b%4', 'b 4', NULL)
          |;""".stripMargin
 
+    val addIndex =
+      s"""CREATE INDEX `${aTableName.dropRight(4)}_idx` ON `$aTableName` (A3);"""
+
     Await.result(for {
       _ <- TestHelper.executeQuery(createATableSql)
       _ <- TestHelper.executeQuery(createBTableSql)
       _ <- TestHelper.executeQuery(insertADataSql)
       _ <- TestHelper.executeQuery(insertBDataSql)
+      _ <- TestHelper.executeQuery(addIndex)
     } yield (), 5.seconds)
   }
 

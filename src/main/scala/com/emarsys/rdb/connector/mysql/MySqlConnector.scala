@@ -23,7 +23,8 @@ class MySqlConnector(
     with MySqlMetadata
     with MySqlSimpleSelect
     with MySqlRawSelect
-    with MySqlIsOptimized {
+    with MySqlIsOptimized
+    with MySqlRawDataManipulation {
 
   protected def handleNotExistingTable[T](table: String): PartialFunction[Throwable, ConnectorResponse[T]] = {
     case e: Exception if e.getMessage.contains("doesn't exist") =>
