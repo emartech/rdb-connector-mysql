@@ -4,9 +4,10 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
 import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
-import com.emarsys.rdb.connector.test.UpdateItSpec
+import com.emarsys.rdb.connector.test.InsertItSpec
 
-class MySqlUpdateItSpec extends TestKit(ActorSystem()) with UpdateItSpec with SelectDbInitHelper {
+class MySqlInsertSpec extends TestKit(ActorSystem()) with InsertItSpec with SelectDbInitHelper{
+
   val aTableName: String = tableName
   val bTableName: String = s"temp_$uuid"
 
