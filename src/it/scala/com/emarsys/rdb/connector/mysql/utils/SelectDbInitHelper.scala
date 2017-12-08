@@ -53,15 +53,19 @@ trait SelectDbInitHelper {
          |('b $$4', 'b%4', 'b 4', NULL)
          |;""".stripMargin
 
-    val addIndex =
-      s"""CREATE INDEX `${aTableName.dropRight(4)}_idx` ON `$aTableName` (A3);"""
+    val addIndex1 =
+      s"""CREATE INDEX `${aTableName.dropRight(5)}_idx1` ON `$aTableName` (A3);"""
+
+    val addIndex2 =
+      s"""CREATE INDEX `${aTableName.dropRight(5)}_idx2` ON `$aTableName` (A2, A3);"""
 
     Await.result(for {
       _ <- TestHelper.executeQuery(createATableSql)
       _ <- TestHelper.executeQuery(createBTableSql)
       _ <- TestHelper.executeQuery(insertADataSql)
       _ <- TestHelper.executeQuery(insertBDataSql)
-      _ <- TestHelper.executeQuery(addIndex)
+      _ <- TestHelper.executeQuery(addIndex1)
+      _ <- TestHelper.executeQuery(addIndex2)
     } yield (), 5.seconds)
   }
 
