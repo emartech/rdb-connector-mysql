@@ -1,7 +1,6 @@
 package com.emarsys.rdb.connector.mysql
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
-import com.emarsys.rdb.connector.common.models.DataManipulation
 import com.emarsys.rdb.connector.common.models.DataManipulation.{Criteria, FieldValueWrapper, Record, UpdateDefinition}
 import com.emarsys.rdb.connector.common.defaults.SqlWriter._
 import com.emarsys.rdb.connector.common.defaults.DefaultFieldValueWrapperConverter._
@@ -72,6 +71,40 @@ trait MySqlRawDataManipulation {
           case ex => Left(ErrorWithMessage(ex.toString))
         }
     }
+  }
+
+  override def rawReplaceData(tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
+    val newTableName = generateTempTableName(tableName)
+    val newTable = TableName(newTableName).toSql
+    val table = TableName(tableName).toSql
+    val createTableQuery = sqlu"CREATE TABLE #$newTable LIKE #$table"
+    val dropTableQuery = sqlu"DROP TABLE IF EXISTS #$newTable"
+
+    db.run(createTableQuery)
+      .flatMap( _ =>
+        rawInsertData(newTableName, definitions).flatMap( insertedCount =>
+          swapTableNames(tableName, newTableName).flatMap( _ =>
+            db.run(dropTableQuery).map( _ => insertedCount )
+          )
+        )
+      )
+      .recover {
+        case ex => Left(ErrorWithMessage(ex.toString))
+      }
+  }
+
+  private def swapTableNames(tableName: String, newTableName: String): Future[Int] = {
+    val temporaryTableName = generateTempTableName()
+    val tablePairs =  Seq((tableName, temporaryTableName), (newTableName, tableName), (temporaryTableName, newTableName))
+    val commaSeparatedRenames = tablePairs.map({case (from, to) => TableName(from).toSql + " TO " + TableName(to).toSql }).mkString(", ")
+    val query = sqlu"RENAME TABLE #$commaSeparatedRenames"
+    db.run(query)
+  }
+
+  private def generateTempTableName(original: String = ""): String = {
+    val shortedName = if(original.length > 30) original.take(30) else original
+    val id = java.util.UUID.randomUUID().toString.replace("-","").take(30)
+    shortedName + "_" + id
   }
 
   private def orderValues(data: Seq[Record], orderReference: Seq[String]): Seq[Seq[FieldValueWrapper]] = {
