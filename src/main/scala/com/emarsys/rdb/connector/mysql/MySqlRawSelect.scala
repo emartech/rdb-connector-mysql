@@ -17,10 +17,11 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
 
 
   override def rawSelect(rawSql: String, limit: Option[Int]): ConnectorResponse[Source[Seq[String], NotUsed]] = {
-    val limitAsSql = limit.fold(""){ l =>
-      s" LIMIT $l"
+    val query = removeEndingSemicolons(rawSql)
+    val limitedQuery = limit.fold(query){ l =>
+      s"SELECT * FROM ( $query ) AS query LIMIT $l"
     }
-    streamingQuery(removeEndingSemicolons(rawSql) + limitAsSql)
+    streamingQuery(limitedQuery)
   }
 
   override def validateRawSelect(rawSql: String): ConnectorResponse[Unit] = {
