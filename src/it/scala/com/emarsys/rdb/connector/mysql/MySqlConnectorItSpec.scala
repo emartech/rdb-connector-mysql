@@ -34,6 +34,20 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         connectorEither shouldBe Left(ErrorWithMessage("SSL Error"))
       }
 
+      "connect ok when ssl disabled but check is disabled" in {
+        val conn = testConnection.copy(
+          connectionParams = "useSSL=false"
+        )
+
+        object MySqlConnWithoutSSL extends MySqlConnectorTrait {
+          override val useSSL: Boolean = false
+        }
+
+        val connectorEither = Await.result(MySqlConnWithoutSSL(conn)(AsyncExecutor.default()), 5.seconds)
+
+        connectorEither shouldBe a [Right[_, _]]
+      }
+
       "connect fail when wrong certificate" in {
         val conn = testConnection.copy(certificate = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)

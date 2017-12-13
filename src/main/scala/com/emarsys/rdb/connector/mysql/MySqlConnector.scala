@@ -5,7 +5,7 @@ import java.util.Properties
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage, TableNotFound}
 import com.emarsys.rdb.connector.common.models.{ConnectionConfig, Connector, ConnectorCompanion, MetaData}
-import com.emarsys.rdb.connector.mysql.MySqlConnector.MySqlConnectorConfig
+import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, MySqlConnectorConfig}
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
 
@@ -36,8 +36,7 @@ class MySqlConnector(
   }
 }
 
-object MySqlConnector extends ConnectorCompanion {
-
+object MySqlConnector extends MySqlConnectorTrait{
   case class MySqlConnectionConfig(
                                     host: String,
                                     port: Int,
@@ -53,10 +52,16 @@ object MySqlConnector extends ConnectorCompanion {
                                    streamChunkSize: Int
                                  )
 
-  private val defaultConfig = MySqlConnectorConfig(
+}
+
+trait MySqlConnectorTrait extends ConnectorCompanion {
+
+  val defaultConfig = MySqlConnectorConfig(
     queryTimeout = 20.minutes,
     streamChunkSize = 5000
   )
+
+  val useSSL: Boolean = Config.db.useSsl
 
   def apply(config: MySqlConnectionConfig, connectorConfig: MySqlConnectorConfig = defaultConfig)(executor: AsyncExecutor)(implicit executionContext: ExecutionContext): ConnectorResponse[MySqlConnector] = {
 
@@ -89,8 +94,12 @@ object MySqlConnector extends ConnectorCompanion {
   override def meta() = MetaData("`", "'", "\\")
 
   private[mysql] def checkSsl(db: Database)(implicit executionContext: ExecutionContext): Future[Boolean] = {
-    db.run(sql"SHOW STATUS LIKE 'ssl_cipher'".as[(String, String)])
-      .map(ssl => ssl.head._2.contains("RSA-AES") || ssl.head._2.matches(".*AES\\d+-SHA.*"))
+    if(useSSL) {
+      db.run(sql"SHOW STATUS LIKE 'ssl_cipher'".as[(String, String)])
+        .map(ssl => ssl.head._2.contains("RSA-AES") || ssl.head._2.matches(".*AES\\d+-SHA.*"))
+    } else {
+      Future.successful(true)
+    }
   }
 
   private[mysql] def createUrl(config: MySqlConnectionConfig) = {
