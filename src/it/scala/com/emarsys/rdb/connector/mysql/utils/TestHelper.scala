@@ -3,14 +3,20 @@ package com.emarsys.rdb.connector.mysql.utils
 import java.util.Properties
 
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, createUrl}
+import com.typesafe.config.ConfigFactory
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
 
 import scala.concurrent.Future
 
 object TestHelper {
+  val config = ConfigFactory.load()
+  def configValue(path: String, default: => String): String =
+    if (config.hasPath(path)) config.getString(path)
+    else default
+
   val TEST_CONNECTION_CONFIG = MySqlConnectionConfig(
-    host = "db",
+    host = configValue("test.db.host", "db"),
     port = 3306,
     dbName = "it-test-db",
     dbUser = "it-test-user",
