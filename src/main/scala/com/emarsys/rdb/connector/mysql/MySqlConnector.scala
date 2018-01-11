@@ -6,6 +6,7 @@ import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage, TableNotFound}
 import com.emarsys.rdb.connector.common.models.{ConnectionConfig, Connector, ConnectorCompanion, MetaData}
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, MySqlConnectorConfig}
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
 
@@ -62,6 +63,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
   )
 
   val useSSL: Boolean = Config.db.useSsl
+  val useHikari: Boolean = Config.db.useHikari
 
   def apply(config: MySqlConnectionConfig, connectorConfig: MySqlConnectorConfig = defaultConfig)(executor: AsyncExecutor)(implicit executionContext: ExecutionContext): ConnectorResponse[MySqlConnector] = {
 
@@ -71,14 +73,29 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
 
     val url = createUrl(config)
 
-    val db = Database.forURL(
-      url = url,
-      driver = "slick.jdbc.MySQLProfile",
-      user = config.dbUser,
-      password = config.dbPassword,
-      prop = prop,
-      executor = executor
-    )
+    val db =
+      if(!useHikari) {
+        Database.forURL(
+          url = url,
+          driver = "slick.jdbc.MySQLProfile",
+          user = config.dbUser,
+          password = config.dbPassword,
+          prop = prop,
+          executor = executor
+        )
+      } else {
+        val customDbConf = ConfigFactory.load()
+          .withValue("mysqldb.properties.url", ConfigValueFactory.fromAnyRef(url))
+          .withValue("mysqldb.properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
+          .withValue("mysqldb.properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
+          .withValue("mysqldb.properties.driver", ConfigValueFactory.fromAnyRef("slick.jdbc.MySQLProfile"))
+        val sslConfig = if (Config.db.useSsl) {
+          customDbConf
+            .withValue("mysqldb.properties.properties.useSSL", ConfigValueFactory.fromAnyRef("true"))
+            .withValue("mysqldb.properties.properties.serverSslCert", ConfigValueFactory.fromAnyRef(config.certificate))
+        } else customDbConf
+        Database.forConfig("mysqldb", sslConfig)
+      }
 
     checkSsl(db).map[Either[ConnectorError, MySqlConnector]] {
       if (_) {

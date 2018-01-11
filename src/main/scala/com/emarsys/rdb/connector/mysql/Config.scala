@@ -9,7 +9,8 @@ trait Config {
   private val config = ConfigFactory.load()
 
   object db {
-    lazy val useSsl = Try(config.getBoolean("db.use-ssl")).getOrElse(true)
+    lazy val useSsl = Try(config.getBoolean("mysqldb.use-ssl")).getOrElse(true)
+    lazy val useHikari = Try(config.getBoolean("mysqldb.use-hikari")).getOrElse(false)
   }
 
 }

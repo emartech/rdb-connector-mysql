@@ -48,6 +48,17 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         connectorEither shouldBe a [Right[_, _]]
       }
 
+      "connect ok when hikari enabled" in {
+
+        object MySqlConnWithoutSSL extends MySqlConnectorTrait {
+          override val useHikari: Boolean = true
+        }
+
+        val connectorEither = Await.result(MySqlConnWithoutSSL(testConnection)(AsyncExecutor.default()), 5.seconds)
+
+        connectorEither shouldBe a [Right[_, _]]
+      }
+
       "connect fail when wrong certificate" in {
         val conn = testConnection.copy(certificate = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
