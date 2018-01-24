@@ -27,6 +27,7 @@ object TestHelper {
     val prop = new Properties()
     prop.setProperty("useSSL", "true")
     prop.setProperty("serverSslCert", TEST_CONNECTION_CONFIG.certificate)
+    prop.setProperty("disableSslHostnameVerification", "true")
 
     val url = createUrl(TEST_CONNECTION_CONFIG)
 

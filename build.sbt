@@ -13,7 +13,7 @@ libraryDependencies ++= {
     "com.github.emartech" %  "rdb-connector-common"  % "-SNAPSHOT" changing(),
     "com.typesafe.slick"  %% "slick"                 % slickV,
     "com.typesafe.slick"  %% "slick-hikaricp"        % slickV,
-    "org.mariadb.jdbc"    %  "mariadb-java-client"   % "1.5.9",
+    "org.mariadb.jdbc"    %  "mariadb-java-client"   % "2.2.1",
     "org.scalatest"       %% "scalatest"             % scalaTestV  % "test",
     "com.typesafe.akka"   %% "akka-stream-testkit"   % "2.5.6"     % "test",
     "com.github.emartech" %  "rdb-connector-test"    % "-SNAPSHOT" % "test" changing()

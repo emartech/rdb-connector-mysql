@@ -70,6 +70,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
     val prop = new Properties()
     prop.setProperty("useSSL", "true")
     prop.setProperty("serverSslCert", config.certificate)
+    prop.setProperty("disableSslHostnameVerification", "true")
 
     val url = createUrl(config)
 
@@ -92,6 +93,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
         val sslConfig = if (Config.db.useSsl) {
           customDbConf
             .withValue("mysqldb.properties.properties.useSSL", ConfigValueFactory.fromAnyRef("true"))
+            .withValue("mysqldb.properties.properties.disableSslHostnameVerification", ConfigValueFactory.fromAnyRef("true"))
             .withValue("mysqldb.properties.properties.serverSslCert", ConfigValueFactory.fromAnyRef(config.certificate))
         } else customDbConf
         Database.forConfig("mysqldb", sslConfig)
