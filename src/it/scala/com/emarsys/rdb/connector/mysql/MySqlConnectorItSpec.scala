@@ -63,28 +63,32 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         val conn = testConnection.copy(certificate = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe Left(ErrorWithMessage("Cannot connect to the sql server"))
+        connectorEither shouldBe a [Left[_,_]]
+        connectorEither.left.get shouldBe an [ErrorWithMessage]
       }
 
       "connect fail when wrong host" in {
         val conn = testConnection.copy(host = "wrong")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe Left(ErrorWithMessage("Cannot connect to the sql server"))
+        connectorEither shouldBe a [Left[_,_]]
+        connectorEither.left.get shouldBe an [ErrorWithMessage]
       }
 
       "connect fail when wrong user" in {
         val conn = testConnection.copy(dbUser = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe Left(ErrorWithMessage("Cannot connect to the sql server"))
+        connectorEither shouldBe a [Left[_,_]]
+        connectorEither.left.get shouldBe an [ErrorWithMessage]
       }
 
       "connect fail when wrong password" in {
         val conn = testConnection.copy(dbPassword = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe Left(ErrorWithMessage("Cannot connect to the sql server"))
+        connectorEither shouldBe a [Left[_,_]]
+        connectorEither.left.get shouldBe an [ErrorWithMessage]
       }
 
     }

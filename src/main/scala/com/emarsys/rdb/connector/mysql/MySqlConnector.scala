@@ -106,7 +106,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
         Left(ErrorWithMessage("SSL Error"))
       }
     }.recover {
-      case _ => Left(ErrorWithMessage("Cannot connect to the sql server"))
+      case ex => Left(ErrorWithMessage(s"Cannot connect to the sql server: ${ex.getMessage}"))
     }
   }
 
