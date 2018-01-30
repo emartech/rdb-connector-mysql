@@ -86,7 +86,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
         )
       } else {
         val customDbConf = ConfigFactory.load()
-          .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(url))
+          .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(url.replace(":","__")))
           .withValue("mysqldb.properties.url", ConfigValueFactory.fromAnyRef(url))
           .withValue("mysqldb.properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
           .withValue("mysqldb.properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
