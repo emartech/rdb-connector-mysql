@@ -72,7 +72,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
     prop.setProperty("serverSslCert", config.certificate)
     prop.setProperty("disableSslHostnameVerification", "true")
 
-    val url = createUrl(config)
+    val url: String = createUrl(config)
 
     val db =
       if(!useHikari) {
@@ -86,7 +86,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
         )
       } else {
         val customDbConf = ConfigFactory.load()
-          .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(url.replace(":","__").replace("=","__")))
+          .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(s"${config.host}__${config.port}__${config.dbName}"))
           .withValue("mysqldb.properties.url", ConfigValueFactory.fromAnyRef(url))
           .withValue("mysqldb.properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
           .withValue("mysqldb.properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
