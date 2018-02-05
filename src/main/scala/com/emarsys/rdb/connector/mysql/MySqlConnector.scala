@@ -67,47 +67,53 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
 
   def apply(config: MySqlConnectionConfig, connectorConfig: MySqlConnectorConfig = defaultConfig)(executor: AsyncExecutor)(implicit executionContext: ExecutionContext): ConnectorResponse[MySqlConnector] = {
 
-    val prop = new Properties()
-    prop.setProperty("useSSL", "true")
-    prop.setProperty("serverSslCert", config.certificate)
-    //prop.setProperty("disableSslHostnameVerification", "true")
+    val keystoreUrlO = CertificateUtil.createKeystoreTempUrlFromCertificateString(config.certificate)
 
-    val url: String = createUrl(config)
+    if (keystoreUrlO.isEmpty) {
+      Future.successful(Left(ErrorWithMessage("SSL Error")))
+    } else {
+      val keystoreUrl = keystoreUrlO.get
+      val url: String = createUrl(config)
+      val db =
+        if(!useHikari) {
+          val prop = new Properties()
+          prop.setProperty("useSSL", "true")
+          prop.setProperty("verifyServerCertificate", "false")
+          prop.setProperty("clientCertificateKeyStoreUrl", keystoreUrl)
 
-    val db =
-      if(!useHikari) {
-        Database.forURL(
-          url = url,
-          driver = "slick.jdbc.MySQLProfile",
-          user = config.dbUser,
-          password = config.dbPassword,
-          prop = prop,
-          executor = executor
-        )
-      } else {
-        val customDbConf = ConfigFactory.load()
-          .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(s"${config.host}__${config.port}__${config.dbName}"))
-          .withValue("mysqldb.properties.url", ConfigValueFactory.fromAnyRef(url))
-          .withValue("mysqldb.properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
-          .withValue("mysqldb.properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
-          .withValue("mysqldb.properties.driver", ConfigValueFactory.fromAnyRef("slick.jdbc.MySQLProfile"))
-        val sslConfig = if (Config.db.useSsl) {
-          customDbConf
-            .withValue("mysqldb.properties.properties.useSSL", ConfigValueFactory.fromAnyRef("true"))
-            //.withValue("mysqldb.properties.properties.disableSslHostnameVerification", ConfigValueFactory.fromAnyRef("true"))
-            .withValue("mysqldb.properties.properties.serverSslCert", ConfigValueFactory.fromAnyRef(config.certificate))
-        } else customDbConf
-        Database.forConfig("mysqldb", sslConfig)
+          Database.forURL(
+            url = url,
+            driver = "slick.jdbc.MySQLProfile",
+            user = config.dbUser,
+            password = config.dbPassword,
+            prop = prop,
+            executor = executor
+          )
+        } else {
+          val customDbConf = ConfigFactory.load()
+            .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(s"${config.host}__${config.port}__${config.dbName}"))
+            .withValue("mysqldb.properties.url", ConfigValueFactory.fromAnyRef(url))
+            .withValue("mysqldb.properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
+            .withValue("mysqldb.properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
+            .withValue("mysqldb.properties.driver", ConfigValueFactory.fromAnyRef("slick.jdbc.MySQLProfile"))
+          val sslConfig = if (Config.db.useSsl) {
+            customDbConf
+              .withValue("mysqldb.properties.properties.useSSL", ConfigValueFactory.fromAnyRef("true"))
+              .withValue("mysqldb.properties.properties.verifyServerCertificate", ConfigValueFactory.fromAnyRef("false"))
+              .withValue("mysqldb.properties.properties.clientCertificateKeyStoreUrl", ConfigValueFactory.fromAnyRef(keystoreUrl))
+          } else customDbConf
+          Database.forConfig("mysqldb", sslConfig)
+        }
+
+      checkSsl(db).map[Either[ConnectorError, MySqlConnector]] {
+        if (_) {
+          Right(new MySqlConnector(db, connectorConfig))
+        } else {
+          Left(ErrorWithMessage("SSL Error"))
+        }
+      }.recover {
+        case ex => Left(ErrorWithMessage(s"Cannot connect to the sql server: ${ex.getMessage}"))
       }
-
-    checkSsl(db).map[Either[ConnectorError, MySqlConnector]] {
-      if (_) {
-        Right(new MySqlConnector(db, connectorConfig))
-      } else {
-        Left(ErrorWithMessage("SSL Error"))
-      }
-    }.recover {
-      case ex => Left(ErrorWithMessage(s"Cannot connect to the sql server: ${ex.getMessage}"))
     }
   }
 

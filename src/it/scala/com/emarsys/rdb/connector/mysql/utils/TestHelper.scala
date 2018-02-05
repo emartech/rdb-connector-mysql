@@ -2,6 +2,7 @@ package com.emarsys.rdb.connector.mysql.utils
 
 import java.util.Properties
 
+import com.emarsys.rdb.connector.mysql.CertificateUtil
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, createUrl}
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
@@ -24,10 +25,12 @@ object TestHelper {
 
   private lazy val executor = AsyncExecutor.default()
   private lazy val db: Database = {
+    val keystoreUrl = CertificateUtil.createKeystoreTempUrlFromCertificateString(TEST_CONNECTION_CONFIG.certificate).get
+
     val prop = new Properties()
     prop.setProperty("useSSL", "true")
-    prop.setProperty("serverSslCert", TEST_CONNECTION_CONFIG.certificate)
-    //prop.setProperty("disableSslHostnameVerification", "true")
+    prop.setProperty("verifyServerCertificate", "false")
+    prop.setProperty("clientCertificateKeyStoreUrl", keystoreUrl)
 
     val url = createUrl(TEST_CONNECTION_CONFIG)
 

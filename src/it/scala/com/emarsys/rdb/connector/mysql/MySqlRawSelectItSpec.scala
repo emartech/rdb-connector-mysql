@@ -36,7 +36,7 @@ class MySqlRawSelectItSpec extends TestKit(ActorSystem()) with RawSelectItSpec w
 
       result shouldEqual Seq(
         Seq("id", "select_type", "table", "partitions", "type", "possible_keys", "key", "key_len", "ref", "rows", "filtered", "Extra"),
-        Seq("1", "SIMPLE", s"$aTableName", null, "index", null, s"${aTableName.dropRight(5)}_idx2", "7", null, "7", "100.0", "Using index")
+        Seq("1", "SIMPLE", s"$aTableName", null, "index", null, s"${aTableName.dropRight(5)}_idx2", "7", null, "7", "100.00", "Using index")
       )
     }
   }
