@@ -4,7 +4,7 @@ import java.util.Properties
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage, TableNotFound}
-import com.emarsys.rdb.connector.common.models.{ConnectionConfig, Connector, ConnectorCompanion, MetaData}
+import com.emarsys.rdb.connector.common.models._
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, MySqlConnectorConfig}
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import slick.jdbc.MySQLProfile.api._
@@ -46,7 +46,11 @@ object MySqlConnector extends MySqlConnectorTrait{
                                     dbPassword: String,
                                     certificate: String,
                                     connectionParams: String
-                                  ) extends ConnectionConfig
+                                  ) extends ConnectionConfig {
+    override def toCommonFormat: CommonConnectionReadableData = {
+      CommonConnectionReadableData("mysql", s"$host:$port", dbName, dbUser)
+    }
+  }
 
   case class MySqlConnectorConfig(
                                    queryTimeout: FiniteDuration,
