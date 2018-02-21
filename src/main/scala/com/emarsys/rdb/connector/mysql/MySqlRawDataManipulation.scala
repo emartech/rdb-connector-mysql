@@ -38,6 +38,14 @@ trait MySqlRawDataManipulation {
   }
 
   override def rawInsertData(tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
+    rawXsert("INSERT IGNORE", tableName, definitions)
+  }
+
+  override def rawUpsert(tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
+    rawXsert("REPLACE", tableName, definitions)
+  }
+
+  private def rawXsert(method: String, tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
     if(definitions.isEmpty) {
       Future.successful(Right(0))
     } else {
@@ -47,7 +55,7 @@ trait MySqlRawDataManipulation {
       val fieldList = fields.map(FieldName(_).toSql).mkString("(",",",")")
       val valueList = makeSqlValueList(orderValues(definitions, fields))
 
-      val query = sqlu"INSERT IGNORE INTO #$table #$fieldList VALUES #$valueList"
+      val query = sqlu"#$method INTO #$table #$fieldList VALUES #$valueList"
 
       db.run(query)
         .map(result => Right(result))
