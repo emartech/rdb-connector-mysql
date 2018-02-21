@@ -42,7 +42,7 @@ trait MySqlRawDataManipulation {
   }
 
   override def rawUpsert(tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
-    rawXsert("REPLACE", tableName, definitions)
+    rawXsert("REPLACE", tableName, definitions).map(_.map(_ => definitions.size))
   }
 
   private def rawXsert(method: String, tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
