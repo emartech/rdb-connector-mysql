@@ -1,6 +1,6 @@
 package com.emarsys.rdb.connector.mysql
 
-import java.util.Properties
+import java.util.{Properties, UUID}
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage, TableNotFound}
@@ -12,10 +12,12 @@ import slick.util.AsyncExecutor
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class MySqlConnector(
                       protected val db: Database,
-                      protected val connectorConfig: MySqlConnectorConfig
+                      protected val connectorConfig: MySqlConnectorConfig,
+                      protected val poolName: String
                     )(
                       implicit val executionContext: ExecutionContext
                     )
@@ -34,6 +36,24 @@ class MySqlConnector(
 
   override def close(): Future[Unit] = {
     db.shutdown
+  }
+
+  override def innerMetrics(): String = {
+    import java.lang.management.ManagementFactory
+    import com.zaxxer.hikari.HikariPoolMXBean
+    import javax.management.{JMX, ObjectName}
+    Try {
+      val mBeanServer = ManagementFactory.getPlatformMBeanServer
+      val poolObjectName = new ObjectName(s"com.zaxxer.hikari:type=Pool ($poolName)")
+      val poolProxy = JMX.newMXBeanProxy(mBeanServer, poolObjectName, classOf[HikariPoolMXBean])
+
+      s"""{
+         |"activeConnections": ${poolProxy.getActiveConnections},
+         |"idleConnections": ${poolProxy.getIdleConnections},
+         |"threadAwaitingConnections": ${poolProxy.getThreadsAwaitingConnection},
+         |"totalConnections": ${poolProxy.getTotalConnections}
+         |}""".stripMargin
+    }.getOrElse(super.innerMetrics)
   }
 }
 
@@ -72,6 +92,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
   def apply(config: MySqlConnectionConfig, connectorConfig: MySqlConnectorConfig = defaultConfig)(executor: AsyncExecutor)(implicit executionContext: ExecutionContext): ConnectorResponse[MySqlConnector] = {
 
     val keystoreUrlO = CertificateUtil.createKeystoreTempUrlFromCertificateString(config.certificate)
+    val poolName = UUID.randomUUID.toString
 
     if (keystoreUrlO.isEmpty) {
       Future.successful(Left(ErrorWithMessage("SSL Error")))
@@ -95,7 +116,8 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
           )
         } else {
           val customDbConf = ConfigFactory.load()
-            .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(s"${config.host}__${config.port}__${config.dbName}"))
+            .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(poolName))
+            .withValue("mysqldb.registerMbeans", ConfigValueFactory.fromAnyRef(true))
             .withValue("mysqldb.properties.url", ConfigValueFactory.fromAnyRef(url))
             .withValue("mysqldb.properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
             .withValue("mysqldb.properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
@@ -111,7 +133,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
 
       checkSsl(db).map[Either[ConnectorError, MySqlConnector]] {
         if (_) {
-          Right(new MySqlConnector(db, connectorConfig))
+          Right(new MySqlConnector(db, connectorConfig, poolName))
         } else {
           Left(ErrorWithMessage("SSL Error"))
         }
