@@ -44,7 +44,11 @@ trait MySqlMetadata {
   }
 
   private def makeTablesWithFields(tableList: Seq[TableModel], tableFieldMap: Map[String, Seq[FieldModel]]): Seq[FullTableModel] = {
-    tableList.map(table => FullTableModel(table.name, table.isView, tableFieldMap(table.name)))
+    tableList
+      .map(table => (table, tableFieldMap.get(table.name)))
+      .collect {
+        case (table, Some(fields)) => FullTableModel(table.name, table.isView, fields)
+      }
   }
 
   private def parseToFiledModel(f: (String, String)): FieldModel = {
