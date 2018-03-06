@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     cached: true
+    environment:
+      DATABASE_HOST: "db"
     links:
       - db
 
