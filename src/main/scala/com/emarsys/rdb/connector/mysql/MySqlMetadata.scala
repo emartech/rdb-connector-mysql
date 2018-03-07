@@ -2,9 +2,11 @@ package com.emarsys.rdb.connector.mysql
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
+import com.emarsys.rdb.connector.common.models.SimpleSelect.TableName
 import com.emarsys.rdb.connector.common.models.TableSchemaDescriptors.{FieldModel, FullTableModel, TableModel}
-import com.emarsys.rdb.connector.mysql.Sanitizer.quoteIdentifier
 import slick.jdbc.MySQLProfile.api._
+import com.emarsys.rdb.connector.common.defaults.SqlWriter._
+import MySqlWriters._
 
 import scala.concurrent.Future
 
@@ -21,7 +23,7 @@ trait MySqlMetadata {
   }
 
   override def listFields(tableName: String): ConnectorResponse[Seq[FieldModel]] = {
-    db.run(sql"DESC #${quoteIdentifier(tableName)}".as[(String, String, String, String, String, String)])
+    db.run(sql"DESC #${TableName(tableName).toSql}".as[(String, String, String, String, String, String)])
       .map(_.map(parseToFiledModel))
       .map(Right(_))
       .recoverWith(handleNotExistingTable(tableName))

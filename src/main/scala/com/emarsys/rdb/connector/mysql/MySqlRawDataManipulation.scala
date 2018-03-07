@@ -3,7 +3,6 @@ package com.emarsys.rdb.connector.mysql
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.DataManipulation.{Criteria, FieldValueWrapper, Record, UpdateDefinition}
 import com.emarsys.rdb.connector.common.defaults.SqlWriter._
-import com.emarsys.rdb.connector.common.defaults.DefaultFieldValueWrapperConverter._
 import com.emarsys.rdb.connector.common.models.DataManipulation.FieldValueWrapper.NullValue
 import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
 import com.emarsys.rdb.connector.common.models.SimpleSelect._
@@ -120,39 +119,32 @@ trait MySqlRawDataManipulation {
   }
 
   private def makeSqlValueList(data: Seq[Seq[FieldValueWrapper]]) = {
-    data.map(list =>
-      list.map { d =>
-        if (d == NullValue) {
-          "NULL"
-        } else {
-          Value(convertTypesToString(d)).toSql
-        }
-      }   .mkString(", ")
-    ).mkString("(","),(",")")
+    import com.emarsys.rdb.connector.common.defaults.FieldValueConverter._
+    import fieldValueConverters._
+
+    data.map(_.map(_.toSimpleSelectValue.map(_.toSql).getOrElse("NULL")).mkString(", "))
+      .mkString("(", "),(", ")")
   }
 
-  private def createConditionQueryPart(criteria: Map[String, FieldValueWrapper]) = {
-    And(criteria.map {
-      case (field, value) =>
-        val strVal = convertTypesToString(value)
-        if (strVal == null) {
-          IsNull(FieldName(field))
-        } else {
-          EqualToValue(FieldName(field), Value(strVal))
-        }
+  private def createConditionQueryPart(criteria: Criteria) = {
+    import com.emarsys.rdb.connector.common.defaults.FieldValueConverter._
+    import fieldValueConverters._
+
+    And(criteria.mapValues(_.toSimpleSelectValue).map {
+      case (field, Some(value)) => EqualToValue(FieldName(field), value)
+      case (field, None)        => IsNull(FieldName(field))
     }.toList)
   }
 
   private def createSetQueryPart(criteria: Map[String, FieldValueWrapper]) = {
-    criteria.map {
-      case (field, value) =>
-        val strVal = convertTypesToString(value)
-        if (strVal == null) {
-          FieldName(field).toSql + "=NULL"
-        } else {
-          EqualToValue(FieldName(field), Value(strVal)).toSql
-        }
+    import com.emarsys.rdb.connector.common.defaults.FieldValueConverter._
+    import fieldValueConverters._
+
+    criteria.mapValues(_.toSimpleSelectValue).map {
+      case (field, Some(value)) => EqualToValue(FieldName(field), value).toSql
+      case (field, None)        => FieldName(field).toSql + "=NULL"
     }.mkString(", ")
   }
+
 
 }

@@ -29,6 +29,8 @@ class MySqlConnector(
     with MySqlIsOptimized
     with MySqlRawDataManipulation {
 
+  override protected val fieldValueConverters = MysqlFieldValueConverters
+
   protected def handleNotExistingTable[T](table: String): PartialFunction[Throwable, ConnectorResponse[T]] = {
     case e: Exception if e.getMessage.contains("doesn't exist") =>
       Future.successful(Left(TableNotFound(table)))
