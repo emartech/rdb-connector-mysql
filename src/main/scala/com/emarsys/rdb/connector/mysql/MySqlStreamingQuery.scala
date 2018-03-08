@@ -17,7 +17,7 @@ trait MySqlStreamingQuery {
     val sql = sql"#$query"
       .as(resultConverter)
       .transactionally
-      .withStatementParameters(fetchSize = connectorConfig.streamChunkSize)
+      .withStatementParameters(fetchSize = Int.MinValue)
 
     val publisher = db.stream(sql)
     val dbSource = Source
