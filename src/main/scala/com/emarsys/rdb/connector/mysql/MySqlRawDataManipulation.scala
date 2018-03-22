@@ -15,7 +15,7 @@ trait MySqlRawDataManipulation {
   self: MySqlConnector =>
 
   override def rawUpdate(tableName: String, definitions: Seq[UpdateDefinition]): ConnectorResponse[Int] = {
-    if(definitions.isEmpty) {
+    if (definitions.isEmpty) {
       Future.successful(Right(0))
     } else {
       val table = TableName(tableName).toSql
@@ -37,31 +37,45 @@ trait MySqlRawDataManipulation {
   }
 
   override def rawInsertData(tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
-    rawXsert("INSERT IGNORE", tableName, definitions)
-  }
-
-  override def rawUpsert(tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
-    rawXsert("REPLACE", tableName, definitions).map(_.map(_ => definitions.size))
-  }
-
-  private def rawXsert(method: String, tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
-    if(definitions.isEmpty) {
+    if (definitions.isEmpty) {
       Future.successful(Right(0))
     } else {
-      val table = TableName(tableName).toSql
-
-      val fields = definitions.head.keySet.toSeq
-      val fieldList = fields.map(FieldName(_).toSql).mkString("(",",",")")
-      val valueList = makeSqlValueList(orderValues(definitions, fields))
-
-      val query = sqlu"#$method INTO #$table #$fieldList VALUES #$valueList"
-
-      db.run(query)
+      db.run(sqlu"#${createInsertQuery(tableName, definitions)}")
         .map(result => Right(result))
         .recover {
           case ex => Left(ErrorWithMessage(ex.toString))
         }
     }
+  }
+
+  override def rawUpsert(tableName: String, definitions: Seq[Record]): ConnectorResponse[Int] = {
+    if (definitions.isEmpty) {
+      Future.successful(Right(0))
+    } else {
+      val fields = definitions.head.keySet.toSeq
+      val fieldUpdateList = fields
+        .map(FieldName(_).toSql)
+        .map(fieldName => s"$fieldName=VALUES($fieldName)")
+        .mkString(", ")
+
+      val insertPart = createInsertQuery(tableName, definitions)
+
+      db.run(sqlu"#$insertPart ON DUPLICATE KEY UPDATE #$fieldUpdateList")
+        .map(_ => Right(definitions.size))
+        .recover {
+          case ex => Left(ErrorWithMessage(ex.toString))
+        }
+    }
+  }
+
+  private def createInsertQuery(tableName: String, definitions: Seq[Record]) = {
+    val table = TableName(tableName).toSql
+
+    val fields = definitions.head.keySet.toSeq
+    val fieldList = fields.map(FieldName(_).toSql).mkString("(", ",", ")")
+    val valueList = makeSqlValueList(orderValues(definitions, fields))
+
+    s"INSERT IGNORE INTO $table $fieldList VALUES $valueList"
   }
 
   override def rawDelete(tableName: String, criteria: Seq[Criteria]): ConnectorResponse[Int] = {
@@ -88,10 +102,10 @@ trait MySqlRawDataManipulation {
     val dropTableQuery = sqlu"DROP TABLE IF EXISTS #$newTable"
 
     db.run(createTableQuery)
-      .flatMap( _ =>
-        rawInsertData(newTableName, definitions).flatMap( insertedCount =>
-          swapTableNames(tableName, newTableName).flatMap( _ =>
-            db.run(dropTableQuery).map( _ => insertedCount )
+      .flatMap(_ =>
+        rawInsertData(newTableName, definitions).flatMap(insertedCount =>
+          swapTableNames(tableName, newTableName).flatMap(_ =>
+            db.run(dropTableQuery).map(_ => insertedCount)
           )
         )
       )
@@ -102,15 +116,15 @@ trait MySqlRawDataManipulation {
 
   private def swapTableNames(tableName: String, newTableName: String): Future[Int] = {
     val temporaryTableName = generateTempTableName()
-    val tablePairs =  Seq((tableName, temporaryTableName), (newTableName, tableName), (temporaryTableName, newTableName))
-    val commaSeparatedRenames = tablePairs.map({case (from, to) => TableName(from).toSql + " TO " + TableName(to).toSql }).mkString(", ")
+    val tablePairs = Seq((tableName, temporaryTableName), (newTableName, tableName), (temporaryTableName, newTableName))
+    val commaSeparatedRenames = tablePairs.map({ case (from, to) => TableName(from).toSql + " TO " + TableName(to).toSql }).mkString(", ")
     val query = sqlu"RENAME TABLE #$commaSeparatedRenames"
     db.run(query)
   }
 
   private def generateTempTableName(original: String = ""): String = {
-    val shortedName = if(original.length > 30) original.take(30) else original
-    val id = java.util.UUID.randomUUID().toString.replace("-","").take(30)
+    val shortedName = if (original.length > 30) original.take(30) else original
+    val id = java.util.UUID.randomUUID().toString.replace("-", "").take(30)
     shortedName + "_" + id
   }
 
@@ -132,7 +146,7 @@ trait MySqlRawDataManipulation {
 
     And(criteria.mapValues(_.toSimpleSelectValue).map {
       case (field, Some(value)) => EqualToValue(FieldName(field), value)
-      case (field, None)        => IsNull(FieldName(field))
+      case (field, None) => IsNull(FieldName(field))
     }.toList)
   }
 
@@ -142,7 +156,7 @@ trait MySqlRawDataManipulation {
 
     criteria.mapValues(_.toSimpleSelectValue).map {
       case (field, Some(value)) => EqualToValue(FieldName(field), value).toSql
-      case (field, None)        => FieldName(field).toSql + "=NULL"
+      case (field, None) => FieldName(field).toSql + "=NULL"
     }.mkString(", ")
   }
 
