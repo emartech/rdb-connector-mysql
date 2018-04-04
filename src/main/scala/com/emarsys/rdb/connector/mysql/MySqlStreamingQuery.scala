@@ -58,7 +58,7 @@ trait MySqlStreamingQuery {
   }
 
   private def getHeaders(r: PositionedResult): Seq[String] =
-    (1 to r.numColumns).map(r.rs.getMetaData.getColumnName(_))
+    (1 to r.numColumns).map(r.rs.getMetaData.getColumnLabel(_))
 
   private def parseDateTime(column: String): String = Option(column) match {
     case Some(s) => s.split('.').headOption.getOrElse("")
