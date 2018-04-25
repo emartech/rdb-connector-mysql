@@ -6,6 +6,7 @@ import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage, TableNotFound}
 import com.emarsys.rdb.connector.common.models._
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, MySqlConnectorConfig}
+import com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
@@ -30,6 +31,11 @@ class MySqlConnector(
     with MySqlRawDataManipulation {
 
   override protected val fieldValueConverters = MysqlFieldValueConverters
+
+  override val isErrorRetryable: PartialFunction[Throwable, Boolean] = {
+    case _: MySQLTransactionRollbackException => true
+    case _ => false
+  }
 
   protected def handleNotExistingTable[T](table: String): PartialFunction[Throwable, ConnectorResponse[T]] = {
     case e: Exception if e.getMessage.contains("doesn't exist") =>

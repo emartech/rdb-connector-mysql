@@ -5,6 +5,7 @@ import java.util.UUID
 
 import com.emarsys.rdb.connector.common.models.MetaData
 import com.emarsys.rdb.connector.mysql.MySqlConnector.MySqlConnectionConfig
+import com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException
 import com.zaxxer.hikari.HikariPoolMXBean
 import javax.management.{MBeanServer, ObjectName}
 import org.scalatest.mockito.MockitoSugar
@@ -25,6 +26,20 @@ class MySqlConnectorSpec extends WordSpecLike with Matchers with MockitoSugar{
       certificate = "cert",
       connectionParams = "?param1=asd"
     )
+
+    "#isErrorRetryable" should {
+      "return true for MySQLTransactionRollbackException" in {
+        val connector = new MySqlConnector(null, null, null)(null)
+
+        connector.isErrorRetryable(new MySQLTransactionRollbackException()) shouldBe true
+      }
+
+      "return false for other exceptions" in {
+        val connector = new MySqlConnector(null, null, null)(null)
+
+        connector.isErrorRetryable(new Exception()) shouldBe false
+      }
+    }
 
     "#createUrl" should {
 
