@@ -30,9 +30,7 @@ trait MySqlRawDataManipulation {
 
       db.run(DBIO.sequence(queries).transactionally)
         .map(results => Right(results.sum))
-        .recover {
-          case ex => Left(ErrorWithMessage(ex.toString))
-        }
+        .recover(errorHandler())
     }
   }
 
@@ -42,9 +40,7 @@ trait MySqlRawDataManipulation {
     } else {
       db.run(sqlu"#${createInsertQuery(tableName, definitions)}")
         .map(result => Right(result))
-        .recover {
-          case ex => Left(ErrorWithMessage(ex.toString))
-        }
+        .recover(errorHandler())
     }
   }
 
@@ -62,9 +58,7 @@ trait MySqlRawDataManipulation {
 
       db.run(sqlu"#$insertPart ON DUPLICATE KEY UPDATE #$fieldUpdateList")
         .map(_ => Right(definitions.size))
-        .recover {
-          case ex => Left(ErrorWithMessage(ex.toString))
-        }
+        .recover(errorHandler())
     }
   }
 
@@ -88,9 +82,7 @@ trait MySqlRawDataManipulation {
 
       db.run(query)
         .map(result => Right(result))
-        .recover {
-          case ex => Left(ErrorWithMessage(ex.toString))
-        }
+        .recover(errorHandler())
     }
   }
 

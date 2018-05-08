@@ -17,19 +17,15 @@ trait MySqlMetadata {
     db.run(sql"SHOW FULL TABLES".as[(String, String)])
       .map(_.map(parseToTableModel))
       .map(Right(_))
-      .recover {
-        case ex => Left(ErrorWithMessage(ex.toString))
-      }
+      .recover(errorHandler())
   }
 
   override def listFields(tableName: String): ConnectorResponse[Seq[FieldModel]] = {
     db.run(sql"DESC #${TableName(tableName).toSql}".as[(String, String, String, String, String, String)])
       .map(_.map(parseToFiledModel))
       .map(Right(_))
-      .recoverWith(handleNotExistingTable(tableName))
-      .recover {
-        case ex => Left(ErrorWithMessage(ex.toString))
-      }
+      .recover(handleNotExistingTable(tableName))
+      .recover(errorHandler())
   }
 
   override def listTablesWithFields(): ConnectorResponse[Seq[FullTableModel]] = {

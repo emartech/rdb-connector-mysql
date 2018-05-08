@@ -1,6 +1,6 @@
 package com.emarsys.rdb.connector.mysql
 
-import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
+import com.emarsys.rdb.connector.common.models.Errors.{ConnectionConfigError, ConnectionError, ErrorWithMessage}
 import com.emarsys.rdb.connector.mysql.utils.TestHelper
 import org.scalatest.{Matchers, WordSpecLike}
 import slick.util.AsyncExecutor
@@ -31,7 +31,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         )
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe Left(ErrorWithMessage("SSL Error"))
+        connectorEither shouldBe Left(ConnectionConfigError("SSL Error"))
       }
 
       "connect ok when ssl disabled but check is disabled" in {
@@ -63,8 +63,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         val conn = testConnection.copy(certificate = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ErrorWithMessage]
+        connectorEither shouldBe Left(ConnectionConfigError("Wrong SSL cert format"))
       }
 
       "connect fail when wrong host" in {
@@ -72,7 +71,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ErrorWithMessage]
+        connectorEither.left.get shouldBe an [ConnectionError]
       }
 
       "connect fail when wrong user" in {
@@ -80,7 +79,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ErrorWithMessage]
+        connectorEither.left.get shouldBe an [ConnectionError]
       }
 
       "connect fail when wrong password" in {
@@ -88,7 +87,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ErrorWithMessage]
+        connectorEither.left.get shouldBe an [ConnectionError]
       }
 
     }

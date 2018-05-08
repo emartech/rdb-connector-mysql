@@ -3,7 +3,7 @@ package com.emarsys.rdb.connector.mysql
 import java.util.{Properties, UUID}
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
-import com.emarsys.rdb.connector.common.models.Errors.{ConnectorError, ErrorWithMessage, TableNotFound}
+import com.emarsys.rdb.connector.common.models.Errors._
 import com.emarsys.rdb.connector.common.models._
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, MySqlConnectorConfig}
 import com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException
@@ -23,6 +23,7 @@ class MySqlConnector(
                       implicit val executionContext: ExecutionContext
                     )
   extends Connector
+    with MySqlErrorHandling
     with MySqlTestConnection
     with MySqlMetadata
     with MySqlSimpleSelect
@@ -35,11 +36,6 @@ class MySqlConnector(
   override val isErrorRetryable: PartialFunction[Throwable, Boolean] = {
     case _: MySQLTransactionRollbackException => true
     case _ => false
-  }
-
-  protected def handleNotExistingTable[T](table: String): PartialFunction[Throwable, ConnectorResponse[T]] = {
-    case e: Exception if e.getMessage.contains("doesn't exist") =>
-      Future.successful(Left(TableNotFound(table)))
   }
 
   override def close(): Future[Unit] = {
@@ -102,8 +98,8 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
     val keystoreUrlO = CertificateUtil.createKeystoreTempUrlFromCertificateString(config.certificate)
     val poolName = UUID.randomUUID.toString
 
-    if (keystoreUrlO.isEmpty) {
-      Future.successful(Left(ErrorWithMessage("SSL Error")))
+    if (useSSL && keystoreUrlO.isEmpty) {
+      Future.successful(Left(ConnectionConfigError("Wrong SSL cert format")))
     } else {
       val keystoreUrl = keystoreUrlO.get
       val url: String = createUrl(config)
@@ -130,7 +126,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
             .withValue("mysqldb.properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
             .withValue("mysqldb.properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
             .withValue("mysqldb.properties.driver", ConfigValueFactory.fromAnyRef("slick.jdbc.MySQLProfile"))
-          val sslConfig = if (Config.db.useSsl) {
+          val sslConfig = if (useSSL) {
             customDbConf
               .withValue("mysqldb.properties.properties.useSSL", ConfigValueFactory.fromAnyRef("true"))
               .withValue("mysqldb.properties.properties.verifyServerCertificate", ConfigValueFactory.fromAnyRef("false"))
@@ -143,10 +139,10 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
         if (_) {
           Right(new MySqlConnector(db, connectorConfig, poolName))
         } else {
-          Left(ErrorWithMessage("SSL Error"))
+          Left(ConnectionConfigError("SSL Error"))
         }
       }.recover {
-        case ex => Left(ErrorWithMessage(s"Cannot connect to the sql server: ${ex.getMessage}"))
+        case ex => Left(ConnectionError(ex))
       }
     }
   }
