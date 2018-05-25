@@ -10,13 +10,13 @@ libraryDependencies ++= {
   val scalaTestV = "3.0.1"
   val slickV = "3.2.0"
   Seq(
-    "com.github.emartech" %  "rdb-connector-common"  % "f646b1181e",
+    "com.github.emartech" %  "rdb-connector-common"  % "e652d3f091",
     "com.typesafe.slick"  %% "slick"                 % slickV,
     "com.typesafe.slick"  %% "slick-hikaricp"        % slickV,
     "mysql"               %  "mysql-connector-java"  % "5.1.38",
     "org.scalatest"       %% "scalatest"             % scalaTestV   % Test,
     "com.typesafe.akka"   %% "akka-stream-testkit"   % "2.5.6"      % Test,
-    "com.github.emartech" %  "rdb-connector-test"    % "ea2764afd7" % Test,
+    "com.github.emartech" %  "rdb-connector-test"    % "c7b8b3ae04" % Test,
     "com.typesafe.akka"   %% "akka-http-spray-json"  % "10.0.7"     % Test,
     "org.mockito"         %  "mockito-core"          % "2.11.0"     % Test
   )
