@@ -1,12 +1,12 @@
 package com.emarsys.rdb.connector.mysql
 
+import java.sql.SQLTransientException
 import java.util.{Properties, UUID}
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
 import com.emarsys.rdb.connector.common.models.Errors._
 import com.emarsys.rdb.connector.common.models._
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, MySqlConnectorConfig}
-import com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
@@ -34,7 +34,7 @@ class MySqlConnector(
   override protected val fieldValueConverters = MysqlFieldValueConverters
 
   override val isErrorRetryable: PartialFunction[Throwable, Boolean] = {
-    case _: MySQLTransactionRollbackException => true
+    case _: SQLTransientException => true
     case _ => false
   }
 
