@@ -1,5 +1,6 @@
-- type: serial
-  service: rdb-connector-mysql
+- type: parallel
   steps:
-  - command: sbt test
-  - command: ./run_it_tests.sh
+    - service: rdb-connector-mysql
+      command: sbt test
+    - service: rdb-connector-mysql
+      command: ./run_it_tests.sh
