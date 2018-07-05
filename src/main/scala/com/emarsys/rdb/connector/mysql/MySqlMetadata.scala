@@ -1,12 +1,11 @@
 package com.emarsys.rdb.connector.mysql
 
 import com.emarsys.rdb.connector.common.ConnectorResponse
-import com.emarsys.rdb.connector.common.models.Errors.ErrorWithMessage
+import com.emarsys.rdb.connector.common.defaults.SqlWriter._
 import com.emarsys.rdb.connector.common.models.SimpleSelect.TableName
 import com.emarsys.rdb.connector.common.models.TableSchemaDescriptors.{FieldModel, FullTableModel, TableModel}
+import com.emarsys.rdb.connector.mysql.MySqlWriters._
 import slick.jdbc.MySQLProfile.api._
-import com.emarsys.rdb.connector.common.defaults.SqlWriter._
-import MySqlWriters._
 
 import scala.concurrent.Future
 

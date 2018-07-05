@@ -8,7 +8,7 @@ import com.emarsys.rdb.connector.common.models.Errors._
 import com.emarsys.rdb.connector.common.models._
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, MySqlConnectorConfig}
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
-import slick.jdbc.MySQLProfile.backend.Database
+import slick.jdbc.MySQLProfile.backend
 import slick.jdbc.MySQLProfile.api._
 import slick.util.AsyncExecutor
 
@@ -122,7 +122,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
   }
 
   private[mysql] def checkSslConfig(connectorConfig: MySqlConnectorConfig, poolName: String)
-                                   (db: Database)
+                                   (db: backend.Database)
                                    (implicit ec: ExecutionContext) = {
     isSslConfiguredProperly(db) map[Either[ConnectorError, MySqlConnector]] {
       if (_) {
