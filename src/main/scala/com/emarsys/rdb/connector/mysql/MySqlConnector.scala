@@ -135,14 +135,19 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
           Database.forConfig("mysqldb", sslConfig)
         }
 
-      checkSsl(db).map[Either[ConnectorError, MySqlConnector]] {
+      checkSsl(db) map[Either[ConnectorError, MySqlConnector]] {
         if (_) {
           Right(new MySqlConnector(db, connectorConfig, poolName))
         } else {
           Left(ConnectionConfigError("SSL Error"))
         }
-      }.recover {
+      } recover {
         case ex => Left(ConnectionError(ex))
+      } map {
+        case Left(e) =>
+          db.shutdown
+          Left(e)
+        case r => r
       }
     }
   }
