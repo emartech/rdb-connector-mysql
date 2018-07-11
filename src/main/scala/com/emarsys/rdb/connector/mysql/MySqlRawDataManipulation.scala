@@ -62,6 +62,12 @@ trait MySqlRawDataManipulation {
     }
   }
 
+  override def rawQuery(rawSql: String): ConnectorResponse[Int] = {
+    db.run(sqlu"#$rawSql")
+      .map(result => Right(result))
+      .recover(errorHandler())
+  }
+
   private def createInsertQuery(tableName: String, definitions: Seq[Record]) = {
     val table = TableName(tableName).toSql
 
