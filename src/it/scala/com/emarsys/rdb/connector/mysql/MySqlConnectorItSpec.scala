@@ -1,13 +1,13 @@
 package com.emarsys.rdb.connector.mysql
 
-import com.emarsys.rdb.connector.common.models.Errors.{ConnectionConfigError, ConnectionError, ErrorWithMessage}
+import com.emarsys.rdb.connector.common.models.Errors.{ConnectionConfigError, ConnectionError}
 import com.emarsys.rdb.connector.mysql.utils.TestHelper
 import org.scalatest.{Matchers, WordSpecLike}
 import slick.util.AsyncExecutor
 
 import scala.concurrent.Await
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 class MySqlConnectorItSpec extends WordSpecLike with Matchers {
 

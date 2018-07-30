@@ -43,22 +43,23 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
     streamingQuery(modifiedSql)
   }
 
-  private def runProjectedSelectWith[R](rawSql: String, fields: Seq[String], allowNullFieldValue: Boolean, queryRunner: String => R) = {
+  private def runProjectedSelectWith[R](rawSql: String, fields: Seq[String], limit: Option[Int], allowNullFieldValue: Boolean, queryRunner: String => R) = {
     val fieldList = concatenateProjection(fields)
     val projectedSql = wrapInProjection(rawSql, fieldList)
     val query =
       if (!allowNullFieldValue) wrapInCondition(projectedSql, fields)
       else projectedSql
+    val limitedQuery = limit.fold(query)(l => s"$query LIMIT $l")
 
-    queryRunner(query)
+    queryRunner(limitedQuery)
   }
 
-  override def projectedRawSelect(rawSql: String, fields: Seq[String], allowNullFieldValue: Boolean): ConnectorResponse[Source[Seq[String], NotUsed]] =
-    runProjectedSelectWith(rawSql, fields, allowNullFieldValue, streamingQuery)
+  override def projectedRawSelect(rawSql: String, fields: Seq[String], limit: Option[Int], allowNullFieldValue: Boolean): ConnectorResponse[Source[Seq[String], NotUsed]] =
+    runProjectedSelectWith(rawSql, fields, limit, allowNullFieldValue, streamingQuery)
 
   override def validateProjectedRawSelect(rawSql: String, fields: Seq[String]): ConnectorResponse[Unit] = {
     val wrapInExplainThenRunOnDb = wrapInExplain _ andThen runQueryOnDb
-    runProjectedSelectWith(rawSql, fields, allowNullFieldValue = true, wrapInExplainThenRunOnDb)
+    runProjectedSelectWith(rawSql, fields, None, allowNullFieldValue = true, wrapInExplainThenRunOnDb)
       .map(_ => Right(()))
       .recover(errorHandler())
   }

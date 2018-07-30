@@ -1,6 +1,6 @@
 package com.emarsys.rdb.connector.mysql
 
-import com.emarsys.rdb.connector.common.models.{Connector, SimpleSelect}
+import com.emarsys.rdb.connector.common.models.Connector
 import com.emarsys.rdb.connector.common.models.TableSchemaDescriptors.{FieldModel, FullTableModel}
 import com.emarsys.rdb.connector.mysql.utils.TestHelper
 import com.emarsys.rdb.connector.test.MetadataItSpec
