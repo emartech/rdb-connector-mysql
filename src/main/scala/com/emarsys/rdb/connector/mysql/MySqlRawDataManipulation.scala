@@ -30,7 +30,7 @@ trait MySqlRawDataManipulation {
 
       db.run(DBIO.sequence(queries).transactionally)
         .map(results => Right(results.sum))
-        .recover(errorHandler())
+        .recover(eitherErrorHandler())
     }
   }
 
@@ -40,7 +40,7 @@ trait MySqlRawDataManipulation {
     } else {
       db.run(sqlu"#${createInsertQuery(tableName, definitions)}")
         .map(result => Right(result))
-        .recover(errorHandler())
+        .recover(eitherErrorHandler())
     }
   }
 
@@ -58,14 +58,14 @@ trait MySqlRawDataManipulation {
 
       db.run(sqlu"#$insertPart ON DUPLICATE KEY UPDATE #$fieldUpdateList")
         .map(_ => Right(definitions.size))
-        .recover(errorHandler())
+        .recover(eitherErrorHandler())
     }
   }
 
   override def rawQuery(rawSql: String): ConnectorResponse[Int] = {
     db.run(sqlu"#$rawSql")
       .map(result => Right(result))
-      .recover(errorHandler())
+      .recover(eitherErrorHandler())
   }
 
   private def createInsertQuery(tableName: String, definitions: Seq[Record]) = {
@@ -88,7 +88,7 @@ trait MySqlRawDataManipulation {
 
       db.run(query)
         .map(result => Right(result))
-        .recover(errorHandler())
+        .recover(eitherErrorHandler())
     }
   }
 

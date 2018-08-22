@@ -18,7 +18,6 @@ trait MySqlStreamingQuery {
       .as(resultConverter)
       .transactionally
       .withStatementParameters(fetchSize = Int.MinValue)
-
     val publisher = db.stream(sql)
     val dbSource = Source
       .fromPublisher(publisher)
@@ -35,6 +34,7 @@ trait MySqlStreamingQuery {
               List(data._2)
             }
       }
+      .recoverWithRetries(1, streamErrorHandler)
 
     Future.successful(Right(dbSource))
   }

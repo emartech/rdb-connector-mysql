@@ -3,10 +3,13 @@ package com.emarsys.rdb.connector.mysql
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
+import com.emarsys.rdb.connector.common.models.SimpleSelect
+import com.emarsys.rdb.connector.common.models.Errors.SqlSyntaxError
+import com.emarsys.rdb.connector.common.models.SimpleSelect.{FieldName, SpecificFields, TableName}
 import com.emarsys.rdb.connector.mysql.utils.{SelectDbInitHelper, TestHelper}
 import com.emarsys.rdb.connector.test.SimpleSelectItSpec
-import scala.concurrent.duration._
 
+import scala.concurrent.duration._
 import scala.concurrent.Await
 
 class MySqlSimpleSelectItSpec extends TestKit(ActorSystem()) with SimpleSelectItSpec with SelectDbInitHelper {
@@ -46,4 +49,17 @@ class MySqlSimpleSelectItSpec extends TestKit(ActorSystem()) with SimpleSelectIt
     Await.result(TestHelper.executeQuery(dropCTableSql), 5.seconds)
     super.cleanUpDb()
   }
+
+  "#rawSelect" when {
+    "there is a syntax error in the query" should {
+      "return SqlSyntaxError" in {
+        val select = SimpleSelect(SpecificFields(Seq(FieldName("nope"))), TableName(aTableName))
+
+        a[SqlSyntaxError] should be thrownBy {
+          getSimpleSelectResult(select)
+        }
+      }
+    }
+  }
+
 }

@@ -1,16 +1,30 @@
 package com.emarsys.rdb.connector.mysql
 
-import com.emarsys.rdb.connector.common.models.Errors.{ConnectionError, ConnectorError, TableNotFound}
+import akka.NotUsed
+import akka.stream.scaladsl.Source
+import com.emarsys.rdb.connector.common.models.Errors._
+import com.mysql.jdbc.exceptions.jdbc4.{MySQLSyntaxErrorException, MySQLTimeoutException}
 
 trait MySqlErrorHandling {
   self: MySqlConnector =>
 
-  protected def handleNotExistingTable[T](table: String): PartialFunction[Throwable, Either[ConnectorError,T]] = {
-    case e: Exception if e.getMessage.contains("doesn't exist") => Left(TableNotFound(table))
+  protected def handleNotExistingTable[T](
+      table: String
+  ): PartialFunction[Throwable, Either[ConnectorError, T]] = {
+    case e: Exception if e.getMessage.contains("doesn't exist") =>
+      Left(TableNotFound(table))
   }
 
-  protected def errorHandler[T](): PartialFunction[Throwable, Either[ConnectorError,T]] = {
-    case ex: Exception => Left(ConnectionError(ex))
+  private def errorHandler: PartialFunction[Throwable, ConnectorError] = {
+    case ex: MySQLSyntaxErrorException => SqlSyntaxError(ex.getMessage)
+    case ex: MySQLTimeoutException     => ConnectionTimeout(ex.getMessage)
+    case ex                            => ConnectionError(ex)
   }
+
+  protected def eitherErrorHandler[T](): PartialFunction[Throwable, Either[ConnectorError, T]] =
+    errorHandler andThen Left.apply
+
+  protected def streamErrorHandler[A]: PartialFunction[Throwable, Source[A, NotUsed]] =
+    errorHandler andThen Source.failed
 
 }

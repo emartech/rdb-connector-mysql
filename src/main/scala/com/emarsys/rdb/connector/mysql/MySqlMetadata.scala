@@ -16,7 +16,7 @@ trait MySqlMetadata {
     db.run(sql"SHOW FULL TABLES".as[(String, String)])
       .map(_.map(parseToTableModel))
       .map(Right(_))
-      .recover(errorHandler())
+      .recover(eitherErrorHandler())
   }
 
   override def listFields(tableName: String): ConnectorResponse[Seq[FieldModel]] = {
@@ -24,7 +24,7 @@ trait MySqlMetadata {
       .map(_.map(parseToFiledModel))
       .map(Right(_))
       .recover(handleNotExistingTable(tableName))
-      .recover(errorHandler())
+      .recover(eitherErrorHandler())
   }
 
   override def listTablesWithFields(): ConnectorResponse[Seq[FullTableModel]] = {

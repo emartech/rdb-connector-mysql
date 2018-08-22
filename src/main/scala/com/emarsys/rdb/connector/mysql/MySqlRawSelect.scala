@@ -27,7 +27,7 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
     val modifiedSql = wrapInExplain(removeEndingSemicolons(rawSql))
     runQueryOnDb(modifiedSql)
       .map(_ => Right(()))
-      .recover(errorHandler())
+      .recover(eitherErrorHandler())
   }
 
   private def runQueryOnDb(modifiedSql: String) = {
@@ -61,7 +61,7 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
     val wrapInExplainThenRunOnDb = wrapInExplain _ andThen runQueryOnDb
     runProjectedSelectWith(rawSql, fields, None, allowNullFieldValue = true, wrapInExplainThenRunOnDb)
       .map(_ => Right(()))
-      .recover(errorHandler())
+      .recover(eitherErrorHandler())
   }
 
   private def concatenateProjection(fields: Seq[String]) =

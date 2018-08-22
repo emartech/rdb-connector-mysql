@@ -17,6 +17,6 @@ trait MySqlIsOptimized {
       .map(_.exists(indexGroup => indexGroup.toSet == fieldSet || Set(indexGroup.head) == fieldSet))
       .map(Right(_))
       .recover(handleNotExistingTable(table))
-      .recover(errorHandler())
+      .recover(eitherErrorHandler())
   }
 }
