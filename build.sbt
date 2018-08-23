@@ -27,7 +27,7 @@ libraryDependencies ++= {
     "mysql"               %  "mysql-connector-java"  % "5.1.38",
     "org.scalatest"       %% "scalatest"             % scalaTestV   % Test,
     "com.typesafe.akka"   %% "akka-stream-testkit"   % "2.5.6"      % Test,
-    "com.github.emartech" %  "rdb-connector-test"    % "7205a6ac07" % Test,
+    "com.github.emartech" %  "rdb-connector-test"    % "60ba443c07" % Test,
     "com.typesafe.akka"   %% "akka-http-spray-json"  % "10.0.7"     % Test,
     "org.mockito"         %  "mockito-core"          % "2.11.0"     % Test
   )
