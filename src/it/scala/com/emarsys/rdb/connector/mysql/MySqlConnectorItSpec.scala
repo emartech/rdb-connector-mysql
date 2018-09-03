@@ -1,6 +1,6 @@
 package com.emarsys.rdb.connector.mysql
 
-import com.emarsys.rdb.connector.common.models.Errors.{ConnectionConfigError, ConnectionError}
+import com.emarsys.rdb.connector.common.models.Errors.{ConnectionConfigError, ConnectionError, ConnectionTimeout}
 import com.emarsys.rdb.connector.mysql.utils.TestHelper
 import org.scalatest.{Matchers, WordSpecLike}
 import slick.util.AsyncExecutor
@@ -60,7 +60,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ConnectionError]
+        connectorEither.left.get shouldBe an [ConnectionTimeout]
       }
 
       "connect fail when wrong user" in {
@@ -68,7 +68,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ConnectionError]
+        connectorEither.left.get shouldBe an [ConnectionTimeout]
       }
 
       "connect fail when wrong password" in {
@@ -76,7 +76,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ConnectionError]
+        connectorEither.left.get shouldBe an [ConnectionTimeout]
       }
 
     }
