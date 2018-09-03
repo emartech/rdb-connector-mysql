@@ -7,7 +7,6 @@ import com.mysql.jdbc.exceptions.jdbc4.{MySQLSyntaxErrorException, MySQLTimeoutE
 import java.sql.SQLTransientConnectionException
 
 trait MySqlErrorHandling {
-  self: MySqlConnector =>
 
   protected def handleNotExistingTable[T](
       table: String

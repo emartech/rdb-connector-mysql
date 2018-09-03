@@ -79,7 +79,7 @@ object MySqlConnector extends MySqlConnectorTrait {
 
 }
 
-trait MySqlConnectorTrait extends ConnectorCompanion {
+trait MySqlConnectorTrait extends ConnectorCompanion with MySqlErrorHandling {
 
   val defaultConfig = MySqlConnectorConfig(
     queryTimeout = 20.minutes,
@@ -130,9 +130,7 @@ trait MySqlConnectorTrait extends ConnectorCompanion {
       } else {
         Left(ConnectionConfigError("SSL Error"))
       }
-    } recover {
-      case ex => Left(ConnectionError(ex))
-    } map {
+    } recover eitherErrorHandler() map {
       case Left(e) =>
         db.shutdown
         Left(e)
