@@ -8,7 +8,7 @@ import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
 import com.emarsys.rdb.connector.test.RawSelectItSpec
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
-import scala.concurrent.{ExecutionContextExecutor}
+import scala.concurrent.ExecutionContextExecutor
 
 class MySqlRawSelectItSpec
     extends TestKit(ActorSystem())
@@ -74,16 +74,25 @@ class MySqlRawSelectItSpec
     }
   }
 
-  "#rawSelect" when {
-    "there is a syntax error in the query" should {
-      "return SqlSyntaxError" in {
-        val result = connector.rawSelect(missingColumnSelect, None)
+  "#rawSelect" should {
 
-        a[SqlSyntaxError] should be thrownBy {
-          getStreamResult(result)
-        }
+    "return SqlSyntaxError when there is a syntax error in the query" in {
+      val result = connector.rawSelect(missingColumnSelect, None)
+
+      a[SqlSyntaxError] should be thrownBy {
+        getStreamResult(result)
       }
     }
+
+    "return SqlSyntaxError when update query given" in {
+      val result = connector.rawSelect(s"UPDATE `$aTableName` SET key = '12' WHERE 1 = 2;", None)
+
+      a[SqlSyntaxError] should be thrownBy {
+        getStreamResult(result)
+      }
+
+    }
+
   }
 
 }

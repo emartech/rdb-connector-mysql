@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
-import com.emarsys.rdb.connector.common.models.SimpleSelect
+import com.emarsys.rdb.connector.common.models.{Errors, SimpleSelect}
 import com.emarsys.rdb.connector.common.models.SimpleSelect._
 import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers, WordSpecLike}
@@ -56,6 +56,12 @@ class MySqlRawQueryItSpec
       "run a delete query" in {
         Await.result(connector.rawQuery(s"DELETE FROM $aTableName WHERE A1!='v1'"), awaitTimeout)
         selectAll(aTableName) shouldEqual Right(Vector(Vector("v1", "1", "1")))
+      }
+
+      "return error when select query given" in {
+        val result: Either[Errors.ConnectorError, Int] = Await.result(connector.rawQuery(s"SELECT 1;"), awaitTimeout)
+        result should be ('left)
+        result.left.get.getMessage shouldBe "Update statements should not return a ResultSet"
       }
 
     }
