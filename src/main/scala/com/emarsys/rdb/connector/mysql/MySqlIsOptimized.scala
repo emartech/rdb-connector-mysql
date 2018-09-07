@@ -11,8 +11,10 @@ trait MySqlIsOptimized {
 
   override def isOptimized(table: String, fields: Seq[String]): ConnectorResponse[Boolean] = {
     val fieldSet = fields.toSet
-    db.run(sql"SHOW INDEX FROM #${TableName(table).toSql}"
-      .as[(String, String, String, String, String, String, String, String, String, String, String, String, String)])
+    db.run(
+        sql"SHOW INDEX FROM #${TableName(table).toSql}"
+          .as[(String, String, String, String, String, String, String, String, String, String, String, String, String)]
+      )
       .map(_.groupBy(_._3).mapValues(_.map(_._5)).values)
       .map(_.exists(indexGroup => indexGroup.toSet == fieldSet || Set(indexGroup.head) == fieldSet))
       .map(Right(_))

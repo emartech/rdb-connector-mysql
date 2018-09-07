@@ -15,12 +15,12 @@ object TestHelper {
 
   lazy val TEST_CONNECTION_CONFIG = MySqlConnectionConfig(
     host = config.getString("dbconf.host"),
-    port= config.getString("dbconf.port").toInt,
-    dbName= config.getString("dbconf.dbName"),
-    dbUser= config.getString("dbconf.user"),
-    dbPassword= config.getString("dbconf.password"),
-    certificate= config.getString("dbconf.certificate"),
-    connectionParams= config.getString("dbconf.connectionParams")
+    port = config.getString("dbconf.port").toInt,
+    dbName = config.getString("dbconf.dbName"),
+    dbUser = config.getString("dbconf.user"),
+    dbPassword = config.getString("dbconf.password"),
+    certificate = config.getString("dbconf.certificate"),
+    connectionParams = config.getString("dbconf.connectionParams")
   )
 
   private lazy val executor = AsyncExecutor.default()

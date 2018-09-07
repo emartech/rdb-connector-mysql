@@ -14,50 +14,56 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers, WordSpecL
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
+class MySqlRawQueryItSpec
+    extends TestKit(ActorSystem())
+    with SelectDbInitHelper
+    with WordSpecLike
+    with Matchers
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
-class MySqlRawQueryItSpec extends TestKit(ActorSystem()) with SelectDbInitHelper with WordSpecLike with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+  val uuid = UUID.randomUUID().toString.replace("-", "")
 
-	val uuid = UUID.randomUUID().toString.replace("-", "")
+  val aTableName: String = s"raw_query_tables_table_$uuid"
+  val bTableName: String = s"temp_$uuid"
 
-	val aTableName: String = s"raw_query_tables_table_$uuid"
-	val bTableName: String = s"temp_$uuid"
+  implicit val materializer: Materializer = ActorMaterializer()
 
-	implicit val materializer: Materializer = ActorMaterializer()
+  val awaitTimeout = 5.seconds
 
+  override def afterAll(): Unit = {
+    system.terminate()
+    connector.close()
+  }
 
-	val awaitTimeout = 5.seconds
+  override def beforeEach(): Unit = {
+    initDb()
+  }
 
-	override def afterAll(): Unit = {
-		system.terminate()
-		connector.close()
-	}
+  override def afterEach(): Unit = {
+    cleanUpDb()
+  }
 
-	override def beforeEach(): Unit = {
-		initDb()
-	}
+  s"RawQuerySpec $uuid" when {
 
-	override def afterEach(): Unit = {
-		cleanUpDb()
-	}
+    "#rawQuery" should {
 
-	s"RawQuerySpec $uuid" when {
+      "validation error" in {
+        val invalidSql = "invalid sql"
+        Await.result(connector.rawQuery(invalidSql), awaitTimeout) shouldBe a[Left[_, _]]
+      }
 
-		"#rawQuery" should {
+      "run a delete query" in {
+        Await.result(connector.rawQuery(s"DELETE FROM $aTableName WHERE A1!='v1'"), awaitTimeout)
+        selectAll(aTableName) shouldEqual Right(Vector(Vector("v1", "1", "1")))
+      }
 
-			"validation error" in {
-				val invalidSql = "invalid sql"
-				Await.result(connector.rawQuery(invalidSql), awaitTimeout) shouldBe a[Left[_, _]]
-			}
+    }
+  }
 
-			"run a delete query" in {
-				Await.result(connector.rawQuery(s"DELETE FROM $aTableName WHERE A1!='v1'"), awaitTimeout)
-				selectAll(aTableName) shouldEqual Right(Vector(Vector("v1", "1", "1")))
-			}
-
-		}
-	}
-
-	private def selectAll(tableName: String) = {
-		Await.result(connector.simpleSelect(SimpleSelect(AllField, TableName(tableName))), awaitTimeout).map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).drop(1))
-	}
+  private def selectAll(tableName: String) = {
+    Await
+      .result(connector.simpleSelect(SimpleSelect(AllField, TableName(tableName))), awaitTimeout)
+      .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).drop(1))
+  }
 }

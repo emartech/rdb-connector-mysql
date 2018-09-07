@@ -16,11 +16,12 @@ class MySqlIsOptimizedSpec extends WordSpecLike with Matchers with BeforeAndAfte
 
   val uuid = UUID.randomUUID().toString
 
-  val tableName = s"is_optimized_table_$uuid"
+  val tableName  = s"is_optimized_table_$uuid"
   val index1Name = s"is_optimized_index1_$uuid"
   val index2Name = s"is_optimized_index2_$uuid"
 
-  val connector: Connector = Await.result(MySqlConnector(TestHelper.TEST_CONNECTION_CONFIG)(AsyncExecutor.default()), 5.seconds).right.get
+  val connector: Connector =
+    Await.result(MySqlConnector(TestHelper.TEST_CONNECTION_CONFIG)(AsyncExecutor.default()), 5.seconds).right.get
 
   override def beforeAll(): Unit = {
     initDb()
@@ -46,17 +47,20 @@ class MySqlIsOptimizedSpec extends WordSpecLike with Matchers with BeforeAndAfte
     val createIndex1Sql = s"""CREATE INDEX `$index1Name` ON `$tableName` (A1, A2);"""
     val createIndex2Sql = s"""CREATE INDEX `$index2Name` ON `$tableName` (A4, A5, A6);"""
 
-    Await.result(for {
-      _ <- TestHelper.executeQuery(createTableSql)
-      _ <- TestHelper.executeQuery(createIndex1Sql)
-      _ <- TestHelper.executeQuery(createIndex2Sql)
-    } yield (), 5.seconds)
+    Await.result(
+      for {
+        _ <- TestHelper.executeQuery(createTableSql)
+        _ <- TestHelper.executeQuery(createIndex1Sql)
+        _ <- TestHelper.executeQuery(createIndex2Sql)
+      } yield (),
+      5.seconds
+    )
   }
 
   def cleanUpDb(): Unit = {
     val dropIndex1Sql = s"""DROP INDEX `$index1Name` ON `$tableName`;"""
     val dropIndex2Sql = s"""DROP INDEX `$index2Name` ON `$tableName`;"""
-    val dropTableSql = s"""DROP TABLE `$tableName`;"""
+    val dropTableSql  = s"""DROP TABLE `$tableName`;"""
 
     Await.result(for {
       _ <- TestHelper.executeQuery(dropIndex2Sql)

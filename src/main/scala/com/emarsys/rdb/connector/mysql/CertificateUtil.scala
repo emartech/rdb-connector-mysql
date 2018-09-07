@@ -10,7 +10,7 @@ object CertificateUtil {
 
   def createKeystoreTempUrlFromCertificateString(certificate: String): Option[String] = {
     Try {
-      val cert = createCertificateFromString(certificate)
+      val cert     = createCertificateFromString(certificate)
       val keyStore = createKeystoreWithCertificate(cert)
       val filePath = createKeystoreTempFile(keyStore)
 

@@ -31,16 +31,22 @@ trait MySqlMetadata {
     val futureMap = listAllFields()
     for {
       tablesE <- listTables()
-      map <- futureMap
+      map     <- futureMap
     } yield tablesE.map(makeTablesWithFields(_, map))
   }
 
   private def listAllFields(): Future[Map[String, Seq[FieldModel]]] = {
-    db.run(sql"select TABLE_NAME, COLUMN_NAME, DATA_TYPE from information_schema.columns where table_schema = DATABASE();".as[(String, String, String)])
+    db.run(
+        sql"select TABLE_NAME, COLUMN_NAME, DATA_TYPE from information_schema.columns where table_schema = DATABASE();"
+          .as[(String, String, String)]
+      )
       .map(_.groupBy(_._1).mapValues(_.map(x => parseToFiledModel(x._2 -> x._3)).toSeq))
   }
 
-  private def makeTablesWithFields(tableList: Seq[TableModel], tableFieldMap: Map[String, Seq[FieldModel]]): Seq[FullTableModel] = {
+  private def makeTablesWithFields(
+      tableList: Seq[TableModel],
+      tableFieldMap: Map[String, Seq[FieldModel]]
+  ): Seq[FullTableModel] = {
     tableList
       .map(table => (table, tableFieldMap.get(table.name)))
       .collect {
@@ -62,7 +68,6 @@ trait MySqlMetadata {
 
   private def isTableTypeView(tableType: String): Boolean = tableType match {
     case "VIEW" => true
-    case _ => false
+    case _      => false
   }
 }
-

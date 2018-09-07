@@ -20,7 +20,7 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
       "connect success" in {
         val connectorEither = Await.result(MySqlConnector(testConnection)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe a [Right[_, _]]
+        connectorEither shouldBe a[Right[_, _]]
 
         connectorEither.right.get.close()
       }
@@ -45,38 +45,38 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
 
         val connectorEither = Await.result(MySqlConnWithoutSSL(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe a [Right[_, _]]
+        connectorEither shouldBe a[Right[_, _]]
       }
 
       "connect fail when wrong certificate" in {
-        val conn = testConnection.copy(certificate = "")
+        val conn            = testConnection.copy(certificate = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
         connectorEither shouldBe Left(ConnectionConfigError("Wrong SSL cert format"))
       }
 
       "connect fail when wrong host" in {
-        val conn = testConnection.copy(host = "wrong")
+        val conn            = testConnection.copy(host = "wrong")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ConnectionTimeout]
+        connectorEither shouldBe a[Left[_, _]]
+        connectorEither.left.get shouldBe an[ConnectionTimeout]
       }
 
       "connect fail when wrong user" in {
-        val conn = testConnection.copy(dbUser = "")
+        val conn            = testConnection.copy(dbUser = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ConnectionTimeout]
+        connectorEither shouldBe a[Left[_, _]]
+        connectorEither.left.get shouldBe an[ConnectionTimeout]
       }
 
       "connect fail when wrong password" in {
-        val conn = testConnection.copy(dbPassword = "")
+        val conn            = testConnection.copy(dbPassword = "")
         val connectorEither = Await.result(MySqlConnector(conn)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe a [Left[_,_]]
-        connectorEither.left.get shouldBe an [ConnectionTimeout]
+        connectorEither shouldBe a[Left[_, _]]
+        connectorEither.left.get shouldBe an[ConnectionTimeout]
       }
 
     }
@@ -86,13 +86,13 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
       "success" in {
         val connectorEither = Await.result(MySqlConnector(testConnection)(AsyncExecutor.default()), 5.seconds)
 
-        connectorEither shouldBe a [Right[_, _]]
-        
+        connectorEither shouldBe a[Right[_, _]]
+
         val connector = connectorEither.right.get
 
         val result = Await.result(connector.testConnection(), 5.seconds)
 
-        result shouldBe a [Right[_, _]]
+        result shouldBe a[Right[_, _]]
 
         connector.close()
       }

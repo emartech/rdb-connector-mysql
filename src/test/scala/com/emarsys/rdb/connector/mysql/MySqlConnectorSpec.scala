@@ -13,7 +13,7 @@ import org.scalatest.{Matchers, WordSpecLike}
 import spray.json._
 import slick.jdbc.MySQLProfile.api._
 
-class MySqlConnectorSpec extends WordSpecLike with Matchers with MockitoSugar{
+class MySqlConnectorSpec extends WordSpecLike with Matchers with MockitoSugar {
 
   "MySqlConnectorSpec" when {
 
@@ -71,7 +71,7 @@ class MySqlConnectorSpec extends WordSpecLike with Matchers with MockitoSugar{
       implicit val executionContext = concurrent.ExecutionContext.Implicits.global
 
       "return Json in happy case" in {
-        val mxPool = new HikariPoolMXBean{
+        val mxPool = new HikariPoolMXBean {
           override def resumePool(): Unit = ???
 
           override def softEvictConnections(): Unit = ???
@@ -88,13 +88,13 @@ class MySqlConnectorSpec extends WordSpecLike with Matchers with MockitoSugar{
         }
 
         val poolName = UUID.randomUUID.toString
-        val db = mock[Database]
+        val db       = mock[Database]
 
-        val mbs:MBeanServer = ManagementFactory.getPlatformMBeanServer()
-        val mBeanName:ObjectName = new ObjectName(s"com.zaxxer.hikari:type=Pool ($poolName)")
-        mbs.registerMBean( mxPool, mBeanName)
+        val mbs: MBeanServer      = ManagementFactory.getPlatformMBeanServer()
+        val mBeanName: ObjectName = new ObjectName(s"com.zaxxer.hikari:type=Pool ($poolName)")
+        mbs.registerMBean(mxPool, mBeanName)
 
-        val connector = new MySqlConnector(db, MySqlConnector.defaultConfig, poolName)
+        val connector   = new MySqlConnector(db, MySqlConnector.defaultConfig, poolName)
         val metricsJson = connector.innerMetrics().parseJson.asJsObject
 
         metricsJson.fields.size shouldEqual 4
@@ -102,15 +102,14 @@ class MySqlConnectorSpec extends WordSpecLike with Matchers with MockitoSugar{
       }
 
       "return Json in sad case" in {
-        val db = mock[Database]
-        val poolName = ""
-        val connector = new MySqlConnector(db, MySqlConnector.defaultConfig, poolName)
+        val db          = mock[Database]
+        val poolName    = ""
+        val connector   = new MySqlConnector(db, MySqlConnector.defaultConfig, poolName)
         val metricsJson = connector.innerMetrics().parseJson.asJsObject
         metricsJson.fields.size shouldEqual 0
       }
 
     }
-
 
   }
 }

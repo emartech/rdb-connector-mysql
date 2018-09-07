@@ -14,11 +14,9 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
   import MySqlWriters._
   import com.emarsys.rdb.connector.common.defaults.SqlWriter._
 
-
   override def rawSelect(rawSql: String, limit: Option[Int]): ConnectorResponse[Source[Seq[String], NotUsed]] = {
     val query = removeEndingSemicolons(rawSql)
-    val limitedQuery = limit.fold(query) { l =>
-      wrapInLimit(query, l)
+    val limitedQuery = limit.fold(query) { l => wrapInLimit(query, l)
     }
     streamingQuery(limitedQuery)
   }
@@ -43,8 +41,14 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
     streamingQuery(modifiedSql)
   }
 
-  private def runProjectedSelectWith[R](rawSql: String, fields: Seq[String], limit: Option[Int], allowNullFieldValue: Boolean, queryRunner: String => R) = {
-    val fieldList = concatenateProjection(fields)
+  private def runProjectedSelectWith[R](
+      rawSql: String,
+      fields: Seq[String],
+      limit: Option[Int],
+      allowNullFieldValue: Boolean,
+      queryRunner: String => R
+  ) = {
+    val fieldList    = concatenateProjection(fields)
     val projectedSql = wrapInProjection(rawSql, fieldList)
     val query =
       if (!allowNullFieldValue) wrapInCondition(projectedSql, fields)
@@ -54,7 +58,12 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
     queryRunner(limitedQuery)
   }
 
-  override def projectedRawSelect(rawSql: String, fields: Seq[String], limit: Option[Int], allowNullFieldValue: Boolean): ConnectorResponse[Source[Seq[String], NotUsed]] =
+  override def projectedRawSelect(
+      rawSql: String,
+      fields: Seq[String],
+      limit: Option[Int],
+      allowNullFieldValue: Boolean
+  ): ConnectorResponse[Source[Seq[String], NotUsed]] =
     runProjectedSelectWith(rawSql, fields, limit, allowNullFieldValue, streamingQuery)
 
   override def validateProjectedRawSelect(rawSql: String, fields: Seq[String]): ConnectorResponse[Unit] = {

@@ -12,7 +12,8 @@ import scala.concurrent.duration._
 
 class MySqlMetadataItSpec extends MetadataItSpec {
 
-  val connector: Connector = Await.result(MySqlConnector(TestHelper.TEST_CONNECTION_CONFIG)(AsyncExecutor.default()), 5.seconds).right.get
+  val connector: Connector =
+    Await.result(MySqlConnector(TestHelper.TEST_CONNECTION_CONFIG)(AsyncExecutor.default()), 5.seconds).right.get
 
   def initDb(): Unit = {
     val createTableSql = s"""CREATE TABLE `$tableName` (
@@ -33,16 +34,19 @@ class MySqlMetadataItSpec extends MetadataItSpec {
   }
 
   def cleanUpDb(): Unit = {
-    val dropViewSql = s"""DROP VIEW `$viewName`;"""
-    val dropTableSql = s"""DROP TABLE `$tableName`;"""
-    val dropViewSql2 = s"""DROP VIEW IF EXISTS `${viewName}_2`;"""
+    val dropViewSql   = s"""DROP VIEW `$viewName`;"""
+    val dropTableSql  = s"""DROP TABLE `$tableName`;"""
+    val dropViewSql2  = s"""DROP VIEW IF EXISTS `${viewName}_2`;"""
     val dropTableSql2 = s"""DROP TABLE IF EXISTS `${tableName}_2`;"""
-    Await.result(for {
-      _ <- TestHelper.executeQuery(dropViewSql)
-      _ <- TestHelper.executeQuery(dropTableSql)
-      _ <- TestHelper.executeQuery(dropViewSql2)
-      _ <- TestHelper.executeQuery(dropTableSql2)
-    } yield (), 5.seconds)
+    Await.result(
+      for {
+        _ <- TestHelper.executeQuery(dropViewSql)
+        _ <- TestHelper.executeQuery(dropTableSql)
+        _ <- TestHelper.executeQuery(dropViewSql2)
+        _ <- TestHelper.executeQuery(dropTableSql2)
+      } yield (),
+      5.seconds
+    )
   }
 
   s"MetadataItSpec $uuid" when {
@@ -69,13 +73,16 @@ class MySqlMetadataItSpec extends MetadataItSpec {
           _ <- TestHelper.executeQuery(dropTableSql)
         } yield (), 5.seconds)
 
-        val tableFields = Seq("PersonID", "LastName", "FirstName", "Address", "City").map(_.toLowerCase()).sorted.map(FieldModel(_, ""))
+        val tableFields =
+          Seq("PersonID", "LastName", "FirstName", "Address", "City").map(_.toLowerCase()).sorted.map(FieldModel(_, ""))
         val viewFields = Seq("PersonID", "LastName", "FirstName").map(_.toLowerCase()).sorted.map(FieldModel(_, ""))
 
         val resultE = Await.result(connector.listTablesWithFields(), awaitTimeout)
 
-        resultE shouldBe a[Right[_,_]]
-        val result = resultE.right.get.map(x => x.copy(fields = x.fields.map(f => f.copy(name = f.name.toLowerCase, columnType = "")).sortBy(_.name)))
+        resultE shouldBe a[Right[_, _]]
+        val result = resultE.right.get.map(
+          x => x.copy(fields = x.fields.map(f => f.copy(name = f.name.toLowerCase, columnType = "")).sortBy(_.name))
+        )
         result should not contain (FullTableModel(s"${tableName}_2", false, tableFields))
         result should not contain (FullTableModel(s"${viewName}_2", true, viewFields))
       }

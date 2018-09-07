@@ -23,10 +23,13 @@ class MySqlInsertSpec extends TestKit(ActorSystem()) with InsertItSpec with Sele
     super.afterAll()
   }
 
-  val simpleSelectExisting = SimpleSelect(AllField, TableName(tableName),
+  val simpleSelectExisting = SimpleSelect(
+    AllField,
+    TableName(tableName),
     where = Some(
       EqualToValue(FieldName("A1"), Value("v1"))
-    ))
+    )
+  )
 
   s"InsertIgnoreSpec $uuid" when {
 
@@ -34,8 +37,12 @@ class MySqlInsertSpec extends TestKit(ActorSystem()) with InsertItSpec with Sele
 
       "ignore if inserting existing record" in {
         Await.result(connector.insertIgnore(tableName, insertExistingData), awaitTimeout) shouldBe Right(0)
-        Await.result(connector.simpleSelect(simpleSelectAllWithExpectedResultSize(8)), awaitTimeout).map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(8)
-        Await.result(connector.simpleSelect(simpleSelectExisting), awaitTimeout).map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(2)
+        Await
+          .result(connector.simpleSelect(simpleSelectAllWithExpectedResultSize(8)), awaitTimeout)
+          .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(8)
+        Await
+          .result(connector.simpleSelect(simpleSelectExisting), awaitTimeout)
+          .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(2)
       }
     }
   }

@@ -7,7 +7,6 @@ import slick.util.AsyncExecutor
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-
 trait SelectDbInitHelper {
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,7 +14,8 @@ trait SelectDbInitHelper {
   val aTableName: String
   val bTableName: String
 
-  val connector: Connector = Await.result(MySqlConnector(TestHelper.TEST_CONNECTION_CONFIG)(AsyncExecutor.default()), 5.seconds).right.get
+  val connector: Connector =
+    Await.result(MySqlConnector(TestHelper.TEST_CONNECTION_CONFIG)(AsyncExecutor.default()), 5.seconds).right.get
 
   def initDb(): Unit = {
     val createATableSql =
@@ -59,14 +59,17 @@ trait SelectDbInitHelper {
     val addIndex2 =
       s"""CREATE INDEX `${aTableName.dropRight(5)}_idx2` ON `$aTableName` (A2, A3);"""
 
-    Await.result(for {
-      _ <- TestHelper.executeQuery(createATableSql)
-      _ <- TestHelper.executeQuery(createBTableSql)
-      _ <- TestHelper.executeQuery(insertADataSql)
-      _ <- TestHelper.executeQuery(insertBDataSql)
-      _ <- TestHelper.executeQuery(addIndex1)
-      _ <- TestHelper.executeQuery(addIndex2)
-    } yield (), 5.seconds)
+    Await.result(
+      for {
+        _ <- TestHelper.executeQuery(createATableSql)
+        _ <- TestHelper.executeQuery(createBTableSql)
+        _ <- TestHelper.executeQuery(insertADataSql)
+        _ <- TestHelper.executeQuery(insertBDataSql)
+        _ <- TestHelper.executeQuery(addIndex1)
+        _ <- TestHelper.executeQuery(addIndex2)
+      } yield (),
+      5.seconds
+    )
   }
 
   def cleanUpDb(): Unit = {

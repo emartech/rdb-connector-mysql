@@ -16,11 +16,12 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class MySqlConnector(protected val db: Database,
-                     protected val connectorConfig: MySqlConnectorConfig,
-                     protected val poolName: String)
-                    (implicit val executionContext: ExecutionContext)
-  extends Connector
+class MySqlConnector(
+    protected val db: Database,
+    protected val connectorConfig: MySqlConnectorConfig,
+    protected val poolName: String
+)(implicit val executionContext: ExecutionContext)
+    extends Connector
     with MySqlErrorHandling
     with MySqlTestConnection
     with MySqlMetadata
@@ -33,7 +34,7 @@ class MySqlConnector(protected val db: Database,
 
   override val isErrorRetryable: PartialFunction[Throwable, Boolean] = {
     case _: SQLTransientException => true
-    case _ => false
+    case _                        => false
   }
 
   override def close(): Future[Unit] = {
@@ -46,9 +47,9 @@ class MySqlConnector(protected val db: Database,
     import com.zaxxer.hikari.HikariPoolMXBean
     import javax.management.{JMX, ObjectName}
     Try {
-      val mBeanServer = ManagementFactory.getPlatformMBeanServer
+      val mBeanServer    = ManagementFactory.getPlatformMBeanServer
       val poolObjectName = new ObjectName(s"com.zaxxer.hikari:type=Pool ($poolName)")
-      val poolProxy = JMX.newMXBeanProxy(mBeanServer, poolObjectName, classOf[HikariPoolMXBean])
+      val poolProxy      = JMX.newMXBeanProxy(mBeanServer, poolObjectName, classOf[HikariPoolMXBean])
 
       s"""{
          |"activeConnections": ${poolProxy.getActiveConnections},
@@ -62,20 +63,21 @@ class MySqlConnector(protected val db: Database,
 
 object MySqlConnector extends MySqlConnectorTrait {
 
-  case class MySqlConnectionConfig(host: String,
-                                   port: Int,
-                                   dbName: String,
-                                   dbUser: String,
-                                   dbPassword: String,
-                                   certificate: String,
-                                   connectionParams: String) extends ConnectionConfig {
+  case class MySqlConnectionConfig(
+      host: String,
+      port: Int,
+      dbName: String,
+      dbUser: String,
+      dbPassword: String,
+      certificate: String,
+      connectionParams: String
+  ) extends ConnectionConfig {
     override def toCommonFormat: CommonConnectionReadableData = {
       CommonConnectionReadableData("mysql", s"$host:$port", dbName, dbUser)
     }
   }
 
-  case class MySqlConnectorConfig(queryTimeout: FiniteDuration,
-                                  streamChunkSize: Int)
+  case class MySqlConnectorConfig(queryTimeout: FiniteDuration, streamChunkSize: Int)
 
 }
 
@@ -90,9 +92,11 @@ trait MySqlConnectorTrait extends ConnectorCompanion with MySqlErrorHandling {
 
   override def meta() = MetaData("`", "'", "\\")
 
-  def apply(config: MySqlConnectionConfig, connectorConfig: MySqlConnectorConfig = defaultConfig)(executor: AsyncExecutor)(implicit executionContext: ExecutionContext): ConnectorResponse[MySqlConnector] = {
+  def apply(config: MySqlConnectionConfig, connectorConfig: MySqlConnectorConfig = defaultConfig)(
+      executor: AsyncExecutor
+  )(implicit executionContext: ExecutionContext): ConnectorResponse[MySqlConnector] = {
     val keystoreUrl = CertificateUtil.createKeystoreTempUrlFromCertificateString(config.certificate)
-    val poolName = UUID.randomUUID.toString
+    val poolName    = UUID.randomUUID.toString
 
     if (useSSL && keystoreUrl.isEmpty) {
       Future.successful(Left(ConnectionConfigError("Wrong SSL cert format")))
@@ -104,7 +108,8 @@ trait MySqlConnectorTrait extends ConnectorCompanion with MySqlErrorHandling {
   private[mysql] def configureDb(config: MySqlConnectionConfig, keystoreUrlO: Option[String], poolName: String) = {
     val keystoreUrl = keystoreUrlO.get
     val url: String = createUrl(config)
-    val customDbConf = ConfigFactory.load()
+    val customDbConf = ConfigFactory
+      .load()
       .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(poolName))
       .withValue("mysqldb.registerMbeans", ConfigValueFactory.fromAnyRef(true))
       .withValue("mysqldb.properties.url", ConfigValueFactory.fromAnyRef(url))
@@ -115,16 +120,19 @@ trait MySqlConnectorTrait extends ConnectorCompanion with MySqlErrorHandling {
       customDbConf
         .withValue("mysqldb.properties.properties.useSSL", ConfigValueFactory.fromAnyRef("true"))
         .withValue("mysqldb.properties.properties.verifyServerCertificate", ConfigValueFactory.fromAnyRef("false"))
-        .withValue("mysqldb.properties.properties.clientCertificateKeyStoreUrl", ConfigValueFactory.fromAnyRef(keystoreUrl))
+        .withValue(
+          "mysqldb.properties.properties.clientCertificateKeyStoreUrl",
+          ConfigValueFactory.fromAnyRef(keystoreUrl)
+        )
     } else customDbConf
 
     Future.successful(Database.forConfig("mysqldb", sslConfig))
   }
 
-  private[mysql] def checkSslConfig(connectorConfig: MySqlConnectorConfig, poolName: String)
-                                   (db: backend.Database)
-                                   (implicit ec: ExecutionContext) = {
-    isSslConfiguredProperly(db) map[Either[ConnectorError, MySqlConnector]] {
+  private[mysql] def checkSslConfig(connectorConfig: MySqlConnectorConfig, poolName: String)(
+      db: backend.Database
+  )(implicit ec: ExecutionContext) = {
+    isSslConfiguredProperly(db) map [Either[ConnectorError, MySqlConnector]] {
       if (_) {
         Right(new MySqlConnector(db, connectorConfig, poolName))
       } else {
@@ -138,7 +146,9 @@ trait MySqlConnectorTrait extends ConnectorCompanion with MySqlErrorHandling {
     }
   }
 
-  private[mysql] def isSslConfiguredProperly(db: Database)(implicit executionContext: ExecutionContext): Future[Boolean] = {
+  private[mysql] def isSslConfiguredProperly(
+      db: Database
+  )(implicit executionContext: ExecutionContext): Future[Boolean] = {
     if (useSSL) {
       db.run(sql"SHOW STATUS LIKE 'ssl_cipher'".as[(String, String)])
         .map(ssl => ssl.head._2.contains("RSA-AES") || ssl.head._2.matches(".*AES\\d+-SHA.*"))

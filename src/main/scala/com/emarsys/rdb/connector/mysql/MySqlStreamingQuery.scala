@@ -23,16 +23,15 @@ trait MySqlStreamingQuery {
       .fromPublisher(publisher)
       .idleTimeout(connectorConfig.queryTimeout)
       .initialTimeout(connectorConfig.queryTimeout)
-      .statefulMapConcat {
-        () =>
-          var first = true
-          (data: (Seq[String], Seq[String])) =>
-            if (first) {
-              first = false
-              List(data._1, data._2)
-            } else {
-              List(data._2)
-            }
+      .statefulMapConcat { () =>
+        var first = true
+        (data: (Seq[String], Seq[String])) =>
+          if (first) {
+            first = false
+            List(data._1, data._2)
+          } else {
+            List(data._2)
+        }
       }
       .recoverWithRetries(1, streamErrorHandler)
 
@@ -62,6 +61,6 @@ trait MySqlStreamingQuery {
 
   private def parseDateTime(column: String): String = Option(column) match {
     case Some(s) => s.split('.').headOption.getOrElse("")
-    case None => null
+    case None    => null
   }
 }

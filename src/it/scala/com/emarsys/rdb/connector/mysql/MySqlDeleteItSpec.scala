@@ -18,4 +18,3 @@ class MySqlDeleteItSpec extends TestKit(ActorSystem()) with DeleteItSpec with Se
   }
 
 }
-

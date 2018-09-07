@@ -18,4 +18,3 @@ class MySqlReplaceItSpec extends TestKit(ActorSystem()) with ReplaceItSpec with 
   }
 
 }
-
