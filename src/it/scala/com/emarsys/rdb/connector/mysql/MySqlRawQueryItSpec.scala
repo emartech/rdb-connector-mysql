@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
+import com.emarsys.rdb.connector.common.models.Errors.SqlSyntaxError
 import com.emarsys.rdb.connector.common.models.{Errors, SimpleSelect}
 import com.emarsys.rdb.connector.common.models.SimpleSelect._
 import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
@@ -58,10 +59,16 @@ class MySqlRawQueryItSpec
         selectAll(aTableName) shouldEqual Right(Vector(Vector("v1", "1", "1")))
       }
 
-      "return error when select query given" in {
+      "return SqlSyntaxError when select query given" in {
         val result: Either[Errors.ConnectorError, Int] = Await.result(connector.rawQuery(s"SELECT 1;"), awaitTimeout)
         result should be ('left)
-        result.left.get.getMessage shouldBe "Update statements should not return a ResultSet"
+        result.left.get shouldBe SqlSyntaxError("Wrong update statement: non update query given")
+      }
+
+      "return SqlSyntaxError when describe query given" in {
+        val result: Either[Errors.ConnectorError, Int] = Await.result(connector.rawQuery(s"DESCRIBE $aTableName;"), awaitTimeout)
+        result should be ('left)
+        result.left.get shouldBe SqlSyntaxError("Wrong update statement: non update query given")
       }
 
     }

@@ -16,6 +16,12 @@ trait MySqlErrorHandling {
   }
 
   private def errorHandler: PartialFunction[Throwable, ConnectorError] = {
+    case ex: slick.SlickException =>
+      if (ex.getMessage == "Update statements should not return a ResultSet") {
+        SqlSyntaxError("Wrong update statement: non update query given")
+      } else {
+        ConnectionError(ex)
+      }
     case ex: MySQLSyntaxErrorException                                              => SqlSyntaxError(ex.getMessage)
     case ex: MySQLTimeoutException                                                  => ConnectionTimeout(ex.getMessage)
     case ex: SQLTransientConnectionException if ex.getMessage.contains("timed out") => ConnectionTimeout(ex.getMessage)

@@ -90,7 +90,6 @@ class MySqlRawSelectItSpec
       a[SqlSyntaxError] should be thrownBy {
         getStreamResult(result)
       }
-
     }
 
   }
