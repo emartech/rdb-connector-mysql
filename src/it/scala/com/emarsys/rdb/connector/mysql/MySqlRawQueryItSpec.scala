@@ -61,13 +61,14 @@ class MySqlRawQueryItSpec
 
       "return SqlSyntaxError when select query given" in {
         val result: Either[Errors.ConnectorError, Int] = Await.result(connector.rawQuery(s"SELECT 1;"), awaitTimeout)
-        result should be ('left)
+        result should be('left)
         result.left.get shouldBe SqlSyntaxError("Wrong update statement: non update query given")
       }
 
       "return SqlSyntaxError when describe query given" in {
-        val result: Either[Errors.ConnectorError, Int] = Await.result(connector.rawQuery(s"DESCRIBE $aTableName;"), awaitTimeout)
-        result should be ('left)
+        val result: Either[Errors.ConnectorError, Int] =
+          Await.result(connector.rawQuery(s"DESCRIBE $aTableName;"), awaitTimeout)
+        result should be('left)
         result.left.get shouldBe SqlSyntaxError("Wrong update statement: non update query given")
       }
 

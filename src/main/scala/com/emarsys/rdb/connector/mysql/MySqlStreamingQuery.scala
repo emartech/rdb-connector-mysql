@@ -31,7 +31,7 @@ trait MySqlStreamingQuery {
             List(data._1, data._2)
           } else {
             List(data._2)
-        }
+          }
       }
       .recoverWithRetries(1, streamErrorHandler)
 

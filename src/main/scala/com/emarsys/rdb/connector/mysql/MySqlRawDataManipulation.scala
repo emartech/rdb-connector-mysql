@@ -104,7 +104,7 @@ trait MySqlRawDataManipulation {
           rawInsertData(newTableName, definitions).flatMap(
             insertedCount =>
               swapTableNames(tableName, newTableName).flatMap(_ => db.run(dropTableQuery).map(_ => insertedCount))
-        )
+          )
       )
       .recover {
         case ex => Left(ErrorWithMessage(ex.toString))
