@@ -7,10 +7,15 @@ import com.emarsys.rdb.connector.common.defaults.SqlWriter._
 import com.emarsys.rdb.connector.common.models.SimpleSelect
 import com.emarsys.rdb.connector.mysql.MySqlWriters._
 
+import scala.concurrent.duration.FiniteDuration
+
 trait MySqlSimpleSelect extends MySqlStreamingQuery {
   self: MySqlConnector =>
 
-  override def simpleSelect(select: SimpleSelect): ConnectorResponse[Source[Seq[String], NotUsed]] = {
-    streamingQuery(select.toSql)
+  override def simpleSelect(
+      select: SimpleSelect,
+      timeout: FiniteDuration
+  ): ConnectorResponse[Source[Seq[String], NotUsed]] = {
+    streamingQuery(timeout)(select.toSql)
   }
 }

@@ -3,7 +3,8 @@ package com.emarsys.rdb.connector.mysql
 import akka.NotUsed
 import akka.stream.scaladsl.Source
 import com.emarsys.rdb.connector.common.models.Errors._
-import com.mysql.jdbc.exceptions.jdbc4.{MySQLSyntaxErrorException, MySQLTimeoutException}
+import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException
+import com.mysql.jdbc.exceptions.MySQLTimeoutException
 import java.sql.SQLTransientConnectionException
 
 trait MySqlErrorHandling {
@@ -23,6 +24,7 @@ trait MySqlErrorHandling {
         ConnectionError(ex)
       }
     case ex: MySQLSyntaxErrorException                                              => SqlSyntaxError(ex.getMessage)
+    case ex: MySQLTimeoutException if ex.getMessage.contains("cancelled")           => QueryTimeout(ex.getMessage)
     case ex: MySQLTimeoutException                                                  => ConnectionTimeout(ex.getMessage)
     case ex: SQLTransientConnectionException if ex.getMessage.contains("timed out") => ConnectionTimeout(ex.getMessage)
     case ex                                                                         => ConnectionError(ex)

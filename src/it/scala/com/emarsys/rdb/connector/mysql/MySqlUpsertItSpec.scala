@@ -36,6 +36,7 @@ class MySqlUpsertItSpec
   implicit val materializer: Materializer = ActorMaterializer()
 
   val awaitTimeout = 5.seconds
+  val queryTimeout = 5.seconds
 
   override def afterAll(): Unit = {
     system.terminate()
@@ -123,13 +124,13 @@ class MySqlUpsertItSpec
 
         Await.result(connector.upsert(tableName, insertAndUpdateData), awaitTimeout) shouldBe Right(2)
         Await
-          .result(connector.simpleSelect(simpleSelectAll), awaitTimeout)
+          .result(connector.simpleSelect(simpleSelectAll, queryTimeout), awaitTimeout)
           .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(8 + 1)
         Await
-          .result(connector.simpleSelect(simpleSelectV1), awaitTimeout)
+          .result(connector.simpleSelect(simpleSelectV1, queryTimeout), awaitTimeout)
           .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(1 + 1)
         Await
-          .result(connector.simpleSelect(simpleSelectV1new), awaitTimeout)
+          .result(connector.simpleSelect(simpleSelectV1new, queryTimeout), awaitTimeout)
           .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(1 + 1)
       }
 
@@ -175,7 +176,7 @@ class MySqlUpsertItSpec
 
   private def selectAll(tableName: String) = {
     Await
-      .result(connector.simpleSelect(SimpleSelect(AllField, TableName(tableName))), awaitTimeout)
+      .result(connector.simpleSelect(SimpleSelect(AllField, TableName(tableName)), queryTimeout), awaitTimeout)
       .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).drop(1))
   }
 }

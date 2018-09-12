@@ -9,15 +9,21 @@ import slick.jdbc.{GetResult, PositionedResult}
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 trait MySqlStreamingQuery {
   self: MySqlConnector =>
 
-  protected def streamingQuery(query: String): ConnectorResponse[Source[Seq[String], NotUsed]] = {
+  protected def streamingQuery(
+      timeout: FiniteDuration
+  )(query: String): ConnectorResponse[Source[Seq[String], NotUsed]] = {
     val sql = sql"#$query"
       .as(resultConverter)
       .transactionally
-      .withStatementParameters(fetchSize = Int.MinValue)
+      .withStatementParameters(
+        fetchSize = Int.MinValue,
+        statementInit = _.setQueryTimeout(timeout.toSeconds.toInt)
+      )
     val publisher = db.stream(sql)
     val dbSource = Source
       .fromPublisher(publisher)

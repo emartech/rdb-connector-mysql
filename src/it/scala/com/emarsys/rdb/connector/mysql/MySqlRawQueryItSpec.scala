@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
-import com.emarsys.rdb.connector.common.models.Errors.SqlSyntaxError
+import com.emarsys.rdb.connector.common.models.Errors.{QueryTimeout, SqlSyntaxError}
 import com.emarsys.rdb.connector.common.models.{Errors, SimpleSelect}
 import com.emarsys.rdb.connector.common.models.SimpleSelect._
 import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
@@ -31,6 +31,7 @@ class MySqlRawQueryItSpec
   implicit val materializer: Materializer = ActorMaterializer()
 
   val awaitTimeout = 5.seconds
+  val queryTimeout = 5.seconds
 
   override def afterAll(): Unit = {
     system.terminate()
@@ -51,25 +52,33 @@ class MySqlRawQueryItSpec
 
       "validation error" in {
         val invalidSql = "invalid sql"
-        Await.result(connector.rawQuery(invalidSql), awaitTimeout) shouldBe a[Left[_, _]]
+        Await.result(connector.rawQuery(invalidSql, queryTimeout), awaitTimeout) shouldBe a[Left[_, _]]
       }
 
       "run a delete query" in {
-        Await.result(connector.rawQuery(s"DELETE FROM $aTableName WHERE A1!='v1'"), awaitTimeout)
+        Await.result(connector.rawQuery(s"DELETE FROM $aTableName WHERE A1!='v1'", queryTimeout), awaitTimeout)
         selectAll(aTableName) shouldEqual Right(Vector(Vector("v1", "1", "1")))
       }
 
       "return SqlSyntaxError when select query given" in {
-        val result: Either[Errors.ConnectorError, Int] = Await.result(connector.rawQuery(s"SELECT 1;"), awaitTimeout)
+        val result: Either[Errors.ConnectorError, Int] =
+          Await.result(connector.rawQuery(s"SELECT 1;", queryTimeout), awaitTimeout)
         result should be('left)
         result.left.get shouldBe SqlSyntaxError("Wrong update statement: non update query given")
       }
 
       "return SqlSyntaxError when describe query given" in {
         val result: Either[Errors.ConnectorError, Int] =
-          Await.result(connector.rawQuery(s"DESCRIBE $aTableName;"), awaitTimeout)
+          Await.result(connector.rawQuery(s"DESCRIBE $aTableName;", queryTimeout), awaitTimeout)
         result should be('left)
         result.left.get shouldBe SqlSyntaxError("Wrong update statement: non update query given")
+      }
+
+      "return QueryTimeout when query takes more time than the timeout" in {
+        val query  = s"DELETE FROM $aTableName WHERE A1 = SLEEP(2)"
+        val result = Await.result(connector.rawQuery(query, 1.second), awaitTimeout)
+
+        result.left.get shouldBe a[QueryTimeout]
       }
 
     }
@@ -77,7 +86,7 @@ class MySqlRawQueryItSpec
 
   private def selectAll(tableName: String) = {
     Await
-      .result(connector.simpleSelect(SimpleSelect(AllField, TableName(tableName))), awaitTimeout)
+      .result(connector.simpleSelect(SimpleSelect(AllField, TableName(tableName)), queryTimeout), awaitTimeout)
       .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).drop(1))
   }
 }

@@ -38,10 +38,10 @@ class MySqlInsertSpec extends TestKit(ActorSystem()) with InsertItSpec with Sele
       "ignore if inserting existing record" in {
         Await.result(connector.insertIgnore(tableName, insertExistingData), awaitTimeout) shouldBe Right(0)
         Await
-          .result(connector.simpleSelect(simpleSelectAllWithExpectedResultSize(8)), awaitTimeout)
+          .result(connector.simpleSelect(simpleSelectAllWithExpectedResultSize(8), queryTimeout), awaitTimeout)
           .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(8)
         Await
-          .result(connector.simpleSelect(simpleSelectExisting), awaitTimeout)
+          .result(connector.simpleSelect(simpleSelectExisting, queryTimeout), awaitTimeout)
           .map(stream => Await.result(stream.runWith(Sink.seq), awaitTimeout).size) shouldBe Right(2)
       }
     }

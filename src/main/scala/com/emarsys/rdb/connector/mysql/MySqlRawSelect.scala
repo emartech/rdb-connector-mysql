@@ -7,6 +7,7 @@ import com.emarsys.rdb.connector.common.models.SimpleSelect.FieldName
 import slick.jdbc.MySQLProfile.api._
 
 import scala.annotation.tailrec
+import scala.concurrent.duration._
 
 trait MySqlRawSelect extends MySqlStreamingQuery {
   self: MySqlConnector =>
@@ -14,12 +15,16 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
   import MySqlWriters._
   import com.emarsys.rdb.connector.common.defaults.SqlWriter._
 
-  override def rawSelect(rawSql: String, limit: Option[Int]): ConnectorResponse[Source[Seq[String], NotUsed]] = {
+  override def rawSelect(
+      rawSql: String,
+      limit: Option[Int],
+      timeout: FiniteDuration
+  ): ConnectorResponse[Source[Seq[String], NotUsed]] = {
     val query = removeEndingSemicolons(rawSql)
     val limitedQuery = limit.fold(query) { l =>
       wrapInLimit(query, l)
     }
-    streamingQuery(limitedQuery)
+    streamingQuery(timeout)(limitedQuery)
   }
 
   override def validateRawSelect(rawSql: String): ConnectorResponse[Unit] = {
@@ -39,7 +44,7 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
 
   override def analyzeRawSelect(rawSql: String): ConnectorResponse[Source[Seq[String], NotUsed]] = {
     val modifiedSql = wrapInExplain(removeEndingSemicolons(rawSql))
-    streamingQuery(modifiedSql)
+    streamingQuery(5.seconds)(modifiedSql)
   }
 
   private def runProjectedSelectWith[R](
@@ -63,9 +68,10 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
       rawSql: String,
       fields: Seq[String],
       limit: Option[Int],
+      timeout: FiniteDuration,
       allowNullFieldValue: Boolean
   ): ConnectorResponse[Source[Seq[String], NotUsed]] =
-    runProjectedSelectWith(rawSql, fields, limit, allowNullFieldValue, streamingQuery)
+    runProjectedSelectWith(rawSql, fields, limit, allowNullFieldValue, streamingQuery(timeout))
 
   override def validateProjectedRawSelect(rawSql: String, fields: Seq[String]): ConnectorResponse[Unit] = {
     val wrapInExplainThenRunOnDb = wrapInExplain _ andThen runQueryOnDb

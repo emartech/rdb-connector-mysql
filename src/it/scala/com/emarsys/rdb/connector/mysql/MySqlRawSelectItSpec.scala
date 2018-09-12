@@ -3,12 +3,13 @@ package com.emarsys.rdb.connector.mysql
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
-import com.emarsys.rdb.connector.common.models.Errors.SqlSyntaxError
+import com.emarsys.rdb.connector.common.models.Errors.{QueryTimeout, SqlSyntaxError}
 import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
 import com.emarsys.rdb.connector.test.RawSelectItSpec
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration._
 
 class MySqlRawSelectItSpec
     extends TestKit(ActorSystem())
@@ -77,7 +78,7 @@ class MySqlRawSelectItSpec
   "#rawSelect" should {
 
     "return SqlSyntaxError when there is a syntax error in the query" in {
-      val result = connector.rawSelect(missingColumnSelect, None)
+      val result = connector.rawSelect(missingColumnSelect, None, queryTimeout)
 
       a[SqlSyntaxError] should be thrownBy {
         getStreamResult(result)
@@ -85,9 +86,29 @@ class MySqlRawSelectItSpec
     }
 
     "return SqlSyntaxError when update query given" in {
-      val result = connector.rawSelect(s"UPDATE `$aTableName` SET key = '12' WHERE 1 = 2;", None)
+      val result = connector.rawSelect(s"UPDATE `$aTableName` SET key = '12' WHERE 1 = 2;", None, queryTimeout)
 
       a[SqlSyntaxError] should be thrownBy {
+        getStreamResult(result)
+      }
+    }
+
+    "return QueryTimeout when query takes more time than the timeout" in {
+      val result = connector.rawSelect("SELECT SLEEP(2)", None, 1.second)
+
+      a[QueryTimeout] should be thrownBy {
+        getStreamResult(result)
+      }
+    }
+
+  }
+
+  "#projectedRawSelect" should {
+
+    "return QueryTimeout when query takes more time than the timeout" in {
+      val result = connector.projectedRawSelect("SELECT SLEEP(2) as sleep", Seq("sleep"), None, 1.second)
+
+      a[QueryTimeout] should be thrownBy {
         getStreamResult(result)
       }
     }
