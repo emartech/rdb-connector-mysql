@@ -3,6 +3,7 @@ package com.emarsys.rdb.connector.mysql
 import java.lang.management.ManagementFactory
 import java.util.UUID
 
+import com.emarsys.rdb.connector.common.models.Errors.ConnectionTimeout
 import com.emarsys.rdb.connector.common.models.MetaData
 import com.emarsys.rdb.connector.mysql.MySqlConnector.MySqlConnectionConfig
 import com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException
@@ -28,17 +29,20 @@ class MySqlConnectorSpec extends WordSpecLike with Matchers with MockitoSugar {
     )
 
     "#isErrorRetryable" should {
-      "return true for MySQLTransactionRollbackException" in {
-        val connector = new MySqlConnector(null, null, null)(null)
 
-        connector.isErrorRetryable(new MySQLTransactionRollbackException()) shouldBe true
+      Seq(
+        new MySQLTransactionRollbackException() -> true,
+        ConnectionTimeout("timeout")            -> true,
+        new Exception()                         -> false
+      ).foreach {
+        case (e, expected) =>
+          s"return $expected for ${e.getClass.getSimpleName}" in {
+            val connector = new MySqlConnector(null, null, null)(null)
+
+            connector.isErrorRetryable(e) shouldBe expected
+          }
       }
 
-      "return false for other exceptions" in {
-        val connector = new MySqlConnector(null, null, null)(null)
-
-        connector.isErrorRetryable(new Exception()) shouldBe false
-      }
     }
 
     "#createUrl" should {

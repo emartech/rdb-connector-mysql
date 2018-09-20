@@ -34,6 +34,7 @@ class MySqlConnector(
 
   override val isErrorRetryable: PartialFunction[Throwable, Boolean] = {
     case _: SQLTransientException => true
+    case _: ConnectionTimeout     => true
     case _                        => false
   }
 
