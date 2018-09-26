@@ -15,6 +15,8 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
   import MySqlWriters._
   import com.emarsys.rdb.connector.common.defaults.SqlWriter._
 
+  private val analyzeQueryTimeout: FiniteDuration = 5.seconds
+
   override def rawSelect(
       rawSql: String,
       limit: Option[Int],
@@ -44,7 +46,7 @@ trait MySqlRawSelect extends MySqlStreamingQuery {
 
   override def analyzeRawSelect(rawSql: String): ConnectorResponse[Source[Seq[String], NotUsed]] = {
     val modifiedSql = wrapInExplain(removeEndingSemicolons(rawSql))
-    streamingQuery(5.seconds)(modifiedSql)
+    streamingQuery(analyzeQueryTimeout)(modifiedSql)
   }
 
   private def runProjectedSelectWith[R](
