@@ -1,7 +1,4 @@
-# Rdb - connector - mysql
-
-[ ![Codeship Status for emartech/rdb-connector-mysql](https://app.codeship.com/projects/7cc05880-9c55-0135-18fe-3ec7b5d83301/status?branch=master)](https://app.codeship.com/projects/252930)
-[![](https://www.jitpack.io/v/emartech/rdb-connector-mysql.svg)](https://www.jitpack.io/#emartech/rdb-connector-mysql)
+# Rdb - connector - mysql [![Codeship Status for emartech/rdb-connector-mysql](https://app.codeship.com/projects/7cc05880-9c55-0135-18fe-3ec7b5d83301/status?branch=master)](https://app.codeship.com/projects/252930) [![](https://www.jitpack.io/v/emartech/rdb-connector-mysql.svg)](https://www.jitpack.io/#emartech/rdb-connector-mysql)
 
 ## Definitions:
 
