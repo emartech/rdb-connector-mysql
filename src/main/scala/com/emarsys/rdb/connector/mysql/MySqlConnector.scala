@@ -8,8 +8,8 @@ import com.emarsys.rdb.connector.common.models.Errors._
 import com.emarsys.rdb.connector.common.models._
 import com.emarsys.rdb.connector.mysql.MySqlConnector.{MySqlConnectionConfig, MySqlConnectorConfig}
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
-import slick.jdbc.MySQLProfile.backend
 import slick.jdbc.MySQLProfile.api._
+import slick.jdbc.MySQLProfile.backend
 import slick.util.AsyncExecutor
 
 import scala.concurrent.duration._
@@ -93,41 +93,49 @@ trait MySqlConnectorTrait extends ConnectorCompanion with MySqlErrorHandling {
 
   override def meta() = MetaData("`", "'", "\\")
 
-  def apply(config: MySqlConnectionConfig, connectorConfig: MySqlConnectorConfig = defaultConfig)(
-      executor: AsyncExecutor
-  )(implicit executionContext: ExecutionContext): ConnectorResponse[MySqlConnector] = {
+  def apply(
+      config: MySqlConnectionConfig,
+      connectorConfig: MySqlConnectorConfig = defaultConfig,
+      configPath: String = "mysqldb"
+  )(executor: AsyncExecutor)(implicit executionContext: ExecutionContext): ConnectorResponse[MySqlConnector] = {
     val keystoreUrl = CertificateUtil.createKeystoreTempUrlFromCertificateString(config.certificate)
     val poolName    = UUID.randomUUID.toString
 
     if (useSSL && keystoreUrl.isEmpty) {
       Future.successful(Left(ConnectionConfigError("Wrong SSL cert format")))
     } else {
-      configureDb(config, keystoreUrl, poolName).flatMap(checkSslConfig(connectorConfig, poolName))
+      configureDb(config, configPath, keystoreUrl, poolName).flatMap(checkSslConfig(connectorConfig, poolName))
     }
   }
 
-  private[mysql] def configureDb(config: MySqlConnectionConfig, keystoreUrlO: Option[String], poolName: String) = {
+  private[mysql] def configureDb(
+      config: MySqlConnectionConfig,
+      configPath: String,
+      keystoreUrlO: Option[String],
+      poolName: String
+  ) = {
     val keystoreUrl = keystoreUrlO.get
     val url: String = createUrl(config)
     val customDbConf = ConfigFactory
       .load()
-      .withValue("mysqldb.poolName", ConfigValueFactory.fromAnyRef(poolName))
-      .withValue("mysqldb.registerMbeans", ConfigValueFactory.fromAnyRef(true))
-      .withValue("mysqldb.properties.url", ConfigValueFactory.fromAnyRef(url))
-      .withValue("mysqldb.properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
-      .withValue("mysqldb.properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
-      .withValue("mysqldb.properties.driver", ConfigValueFactory.fromAnyRef("slick.jdbc.MySQLProfile"))
+      .getConfig(configPath)
+      .withValue("poolName", ConfigValueFactory.fromAnyRef(poolName))
+      .withValue("registerMbeans", ConfigValueFactory.fromAnyRef(true))
+      .withValue("properties.url", ConfigValueFactory.fromAnyRef(url))
+      .withValue("properties.user", ConfigValueFactory.fromAnyRef(config.dbUser))
+      .withValue("properties.password", ConfigValueFactory.fromAnyRef(config.dbPassword))
+      .withValue("properties.driver", ConfigValueFactory.fromAnyRef("slick.jdbc.MySQLProfile"))
     val sslConfig = if (useSSL) {
       customDbConf
-        .withValue("mysqldb.properties.properties.useSSL", ConfigValueFactory.fromAnyRef("true"))
-        .withValue("mysqldb.properties.properties.verifyServerCertificate", ConfigValueFactory.fromAnyRef("false"))
+        .withValue("properties.properties.useSSL", ConfigValueFactory.fromAnyRef("true"))
+        .withValue("properties.properties.verifyServerCertificate", ConfigValueFactory.fromAnyRef("false"))
         .withValue(
-          "mysqldb.properties.properties.clientCertificateKeyStoreUrl",
+          "properties.properties.clientCertificateKeyStoreUrl",
           ConfigValueFactory.fromAnyRef(keystoreUrl)
         )
     } else customDbConf
 
-    Future.successful(Database.forConfig("mysqldb", sslConfig))
+    Future.successful(Database.forConfig("", sslConfig))
   }
 
   private[mysql] def checkSslConfig(connectorConfig: MySqlConnectorConfig, poolName: String)(
