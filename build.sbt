@@ -33,7 +33,7 @@ lazy val root = (project in file("."))
       val scalaTestV = "3.0.1"
       val slickV     = "3.2.0"
       Seq(
-        "com.github.emartech" % "rdb-connector-common"  % "ed038bfb07",
+        "com.github.emartech" % "rdb-connector-common"  % "4c317e34e5",
         "com.typesafe.slick"  %% "slick"                % slickV,
         "com.typesafe.slick"  %% "slick-hikaricp"       % slickV,
         "mysql"               % "mysql-connector-java"  % "5.1.38",

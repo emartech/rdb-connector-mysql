@@ -1,15 +1,28 @@
 package com.emarsys.rdb.connector.mysql
 
-import com.emarsys.rdb.connector.common.models.Errors.{ConnectionConfigError, ConnectionTimeout}
+import akka.NotUsed
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Sink, Source}
+import akka.testkit.TestKit
+import com.emarsys.rdb.connector.common.ConnectorResponse
+import com.emarsys.rdb.connector.common.models.Errors._
 import com.emarsys.rdb.connector.mysql.utils.TestHelper
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import slick.util.AsyncExecutor
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class MySqlConnectorItSpec extends WordSpecLike with Matchers {
+class MySqlConnectorItSpec
+    extends TestKit(ActorSystem("connector-it-test"))
+    with WordSpecLike
+    with Matchers
+    with BeforeAndAfterAll {
+
+  implicit val mat      = ActorMaterializer()
+  override def afterAll = TestKit.shutdownActorSystem(system)
 
   "MySqlConnectorItSpec" when {
 
@@ -99,5 +112,37 @@ class MySqlConnectorItSpec extends WordSpecLike with Matchers {
 
     }
 
+    "custom error handling" should {
+      def runQuery(q: String): ConnectorResponse[Unit] =
+        for {
+          Right(connector) <- MySqlConnector(testConnection)(AsyncExecutor.default())
+          Right(source)    <- connector.rawSelect(q, limit = None, timeout = 1.second)
+          res              <- sinkOrLeft(source)
+          _ = connector.close()
+        } yield res
+
+      def sinkOrLeft[T](source: Source[T, NotUsed]): ConnectorResponse[Unit] =
+        source
+          .runWith(Sink.ignore)
+          .map[Either[ConnectorError, Unit]](_ => Right(()))
+          .recover {
+            case e: ConnectorError => Left[ConnectorError, Unit](e)
+          }
+
+      "recognize syntax errors" in {
+        val result = Await.result(runQuery("select from table"), 1.second)
+
+        result shouldBe a[Left[_, _]]
+        result.left.get shouldBe an[SqlSyntaxError]
+      }
+
+      "recognize access denied errors" in {
+        val result = Await.result(runQuery("select * from information_schema.innodb_sys_tablestats"), 1.second)
+
+        result shouldBe a[Left[_, _]]
+        result.left.get shouldBe an[AccessDeniedError]
+      }
+    }
   }
+
 }

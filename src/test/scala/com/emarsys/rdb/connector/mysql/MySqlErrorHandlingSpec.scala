@@ -2,8 +2,9 @@ package com.emarsys.rdb.connector.mysql
 
 import java.sql.SQLTransientConnectionException
 
-import com.emarsys.rdb.connector.common.models.Errors.{ConnectionError, ConnectionTimeout, QueryTimeout}
+import com.emarsys.rdb.connector.common.models.Errors._
 import com.mysql.jdbc.exceptions.MySQLTimeoutException
+import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException
 import org.scalatest.{Matchers, WordSpecLike}
 
 class MySqlErrorHandlingSpec extends WordSpecLike with Matchers {
@@ -32,6 +33,18 @@ class MySqlErrorHandlingSpec extends WordSpecLike with Matchers {
       val msg = "Other timeout error"
       val e   = new MySQLTimeoutException(msg)
       eitherErrorHandler.apply(e) shouldEqual Left(ConnectionTimeout(msg))
+    }
+
+    "convert syntax error exception to access denied error if the message implies that" in new MySqlErrorHandling {
+      val msg = "Access denied; you need (at least one of) the PROCESS privilege(s) for this operation"
+      val e   = new MySQLSyntaxErrorException(msg)
+      eitherErrorHandler.apply(e) shouldEqual Left(AccessDeniedError(msg))
+    }
+
+    "convert syntax error exception to SyntaxError" in new MySqlErrorHandling {
+      val msg = "You have an error in your MySql syntax"
+      val e   = new MySQLSyntaxErrorException(msg)
+      eitherErrorHandler.apply(e) shouldEqual Left(SqlSyntaxError(msg))
     }
 
   }

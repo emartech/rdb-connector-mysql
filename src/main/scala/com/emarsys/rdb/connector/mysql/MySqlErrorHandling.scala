@@ -23,6 +23,7 @@ trait MySqlErrorHandling {
       } else {
         ConnectionError(ex)
       }
+    case ex: MySQLSyntaxErrorException if ex.getMessage.contains("Access denied")   => AccessDeniedError(ex.getMessage)
     case ex: MySQLSyntaxErrorException                                              => SqlSyntaxError(ex.getMessage)
     case ex: MySQLTimeoutException if ex.getMessage.contains("cancelled")           => QueryTimeout(ex.getMessage)
     case ex: MySQLTimeoutException                                                  => ConnectionTimeout(ex.getMessage)
