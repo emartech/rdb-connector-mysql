@@ -5,7 +5,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
 import com.emarsys.rdb.connector.common.models.Errors.{QueryTimeout, SqlSyntaxError}
 import com.emarsys.rdb.connector.mysql.utils.SelectDbInitHelper
-import com.emarsys.rdb.connector.test.RawSelectItSpec
+import com.emarsys.rdb.connector.test._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.ExecutionContextExecutor
@@ -40,7 +40,7 @@ class MySqlRawSelectItSpec
 
   "#analyzeRawSelect" should {
     "return result" in {
-      val result = getStreamResult(connector.analyzeRawSelect(simpleSelect))
+      val result = getConnectorResult(connector.analyzeRawSelect(simpleSelect), awaitTimeout)
 
       result shouldEqual Seq(
         Seq(
@@ -81,7 +81,7 @@ class MySqlRawSelectItSpec
       val result = connector.rawSelect(missingColumnSelect, None, queryTimeout)
 
       a[SqlSyntaxError] should be thrownBy {
-        getStreamResult(result)
+        getConnectorResult(result, awaitTimeout)
       }
     }
 
@@ -89,7 +89,7 @@ class MySqlRawSelectItSpec
       val result = connector.rawSelect(s"UPDATE `$aTableName` SET key = '12' WHERE 1 = 2;", None, queryTimeout)
 
       a[SqlSyntaxError] should be thrownBy {
-        getStreamResult(result)
+        getConnectorResult(result, awaitTimeout)
       }
     }
 
@@ -97,7 +97,7 @@ class MySqlRawSelectItSpec
       val result = connector.rawSelect("SELECT SLEEP(2)", None, 1.second)
 
       a[QueryTimeout] should be thrownBy {
-        getStreamResult(result)
+        getConnectorResult(result, awaitTimeout)
       }
     }
 
@@ -109,7 +109,7 @@ class MySqlRawSelectItSpec
       val result = connector.projectedRawSelect("SELECT SLEEP(2) as sleep", Seq("sleep"), None, 1.second)
 
       a[QueryTimeout] should be thrownBy {
-        getStreamResult(result)
+        getConnectorResult(result, awaitTimeout)
       }
     }
 
