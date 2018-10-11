@@ -1,6 +1,0 @@
-- type: parallel
-  steps:
-    - service: rdb-connector-mysql
-      command: sbt test
-    - service: rdb-connector-mysql
-      command: ./run_it_tests.sh
