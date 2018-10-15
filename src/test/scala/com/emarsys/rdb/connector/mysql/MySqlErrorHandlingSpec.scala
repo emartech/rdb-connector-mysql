@@ -2,6 +2,7 @@ package com.emarsys.rdb.connector.mysql
 
 import java.sql.SQLTransientConnectionException
 
+import com.emarsys.rdb.connector.common.models.Errors
 import com.emarsys.rdb.connector.common.models.Errors._
 import com.mysql.jdbc.exceptions.MySQLTimeoutException
 import com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException
@@ -20,7 +21,7 @@ class MySqlErrorHandlingSpec extends WordSpecLike with Matchers {
     "convert transient sql error to connection error if not timeout" in new MySqlErrorHandling {
       val msg = "Other transient error"
       val e   = new SQLTransientConnectionException(msg)
-      eitherErrorHandler.apply(e) shouldEqual Left(ConnectionError(e))
+      eitherErrorHandler.apply(e) shouldEqual Left(Errors.ErrorWithMessage(msg))
     }
 
     "convert timeout error to query timeout error if query is cancelled" in new MySqlErrorHandling {
