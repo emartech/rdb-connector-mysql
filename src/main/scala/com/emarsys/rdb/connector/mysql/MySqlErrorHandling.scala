@@ -1,6 +1,6 @@
 package com.emarsys.rdb.connector.mysql
 
-import java.sql.SQLTransientConnectionException
+import java.sql.{SQLException, SQLTransientConnectionException}
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
@@ -29,6 +29,7 @@ trait MySqlErrorHandling {
     case ex: MySQLTimeoutException if ex.getMessage.contains("cancelled")           => QueryTimeout(ex.getMessage)
     case ex: MySQLTimeoutException                                                  => ConnectionTimeout(ex.getMessage)
     case ex: SQLTransientConnectionException if ex.getMessage.contains("timed out") => ConnectionTimeout(ex.getMessage)
+    case ex: SQLException                                                           => ErrorWithMessage(s"[${ex.getSQLState}] - ${ex.getMessage}")
     case ex                                                                         => ErrorWithMessage(ex.getMessage)
   }
 

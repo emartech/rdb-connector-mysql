@@ -18,9 +18,15 @@ class MySqlErrorHandlingSpec extends WordSpecLike with Matchers {
       eitherErrorHandler.apply(e) shouldEqual Left(ConnectionTimeout(msg))
     }
 
-    "convert transient sql error to connection error if not timeout" in new MySqlErrorHandling {
+    "convert sql error to error with message and state if not timeout" in new MySqlErrorHandling {
       val msg = "Other transient error"
-      val e   = new SQLTransientConnectionException(msg)
+      val e   = new SQLTransientConnectionException(msg, "not-handled-sql-state")
+      eitherErrorHandler.apply(e) shouldEqual Left(Errors.ErrorWithMessage(s"[not-handled-sql-state] - $msg"))
+    }
+
+    "convert general error to error with only message if not timeout" in new MySqlErrorHandling {
+      val msg = "Other transient error"
+      val e   = new Exception(msg)
       eitherErrorHandler.apply(e) shouldEqual Left(Errors.ErrorWithMessage(msg))
     }
 
