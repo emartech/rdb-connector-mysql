@@ -33,9 +33,10 @@ class MySqlConnector(
   override protected val fieldValueConverters = MysqlFieldValueConverters
 
   override val isErrorRetryable: PartialFunction[Throwable, Boolean] = {
-    case _: SQLTransientException => true
-    case _: ConnectionTimeout     => true
-    case _                        => false
+    case _: SQLTransientException                                  => true
+    case _: ConnectionTimeout                                      => true
+    case ErrorWithMessage(message) if message.contains("Deadlock") => true
+    case _                                                         => false
   }
 
   override def close(): Future[Unit] = {
