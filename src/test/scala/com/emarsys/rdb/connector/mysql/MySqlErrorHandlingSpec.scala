@@ -1,6 +1,7 @@
 package com.emarsys.rdb.connector.mysql
 
 import java.sql.SQLTransientConnectionException
+import java.util.concurrent.RejectedExecutionException
 
 import com.emarsys.rdb.connector.common.models.Errors
 import com.emarsys.rdb.connector.common.models.Errors._
@@ -52,6 +53,11 @@ class MySqlErrorHandlingSpec extends WordSpecLike with Matchers {
       val msg = "You have an error in your MySql syntax"
       val e   = new MySQLSyntaxErrorException(msg)
       eitherErrorHandler.apply(e) shouldEqual Left(SqlSyntaxError(msg))
+    }
+
+    "convert RejectedExecutionException to TooManyQueries" in new MySqlErrorHandling {
+      val e = new RejectedExecutionException
+      eitherErrorHandler.apply(e) shouldEqual Left(TooManyQueries)
     }
 
   }
