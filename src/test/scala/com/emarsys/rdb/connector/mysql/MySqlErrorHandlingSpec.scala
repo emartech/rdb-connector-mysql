@@ -56,8 +56,9 @@ class MySqlErrorHandlingSpec extends WordSpecLike with Matchers {
     }
 
     "convert RejectedExecutionException to TooManyQueries" in new MySqlErrorHandling {
-      val e = new RejectedExecutionException
-      eitherErrorHandler.apply(e) shouldEqual Left(TooManyQueries)
+      val msg = "There were too many queries"
+      val e   = new RejectedExecutionException(msg)
+      eitherErrorHandler.apply(e) shouldEqual Left(TooManyQueries(msg))
     }
 
   }

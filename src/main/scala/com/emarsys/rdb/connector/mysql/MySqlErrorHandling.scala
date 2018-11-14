@@ -29,7 +29,7 @@ trait MySqlErrorHandling {
     case ex: MySQLSyntaxErrorException                                              => SqlSyntaxError(ex.getMessage)
     case ex: MySQLTimeoutException if ex.getMessage.contains("cancelled")           => QueryTimeout(ex.getMessage)
     case ex: MySQLTimeoutException                                                  => ConnectionTimeout(ex.getMessage)
-    case ex: RejectedExecutionException                                             => TooManyQueries
+    case ex: RejectedExecutionException                                             => TooManyQueries(ex.getMessage)
     case ex: SQLTransientConnectionException if ex.getMessage.contains("timed out") => ConnectionTimeout(ex.getMessage)
     case ex: SQLException                                                           => ErrorWithMessage(s"[${ex.getSQLState}] - ${ex.getMessage}")
     case ex                                                                         => ErrorWithMessage(ex.getMessage)
