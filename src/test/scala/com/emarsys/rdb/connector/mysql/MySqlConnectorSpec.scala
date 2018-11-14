@@ -25,7 +25,8 @@ class MySqlConnectorSpec extends WordSpecLike with Matchers with MockitoSugar {
       dbUser = "me",
       dbPassword = "secret",
       certificate = "cert",
-      connectionParams = "?param1=asd"
+      connectionParams = "?param1=asd",
+      replicaConfig = None
     )
 
     "#isErrorRetryable" should {

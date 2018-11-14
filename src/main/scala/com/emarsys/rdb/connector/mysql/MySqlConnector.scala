@@ -65,15 +65,18 @@ class MySqlConnector(
 
 object MySqlConnector extends MySqlConnectorTrait {
 
-  case class MySqlConnectionConfig(
+  final case class MySqlConnectionConfig(
       host: String,
       port: Int,
       dbName: String,
       dbUser: String,
       dbPassword: String,
       certificate: String,
-      connectionParams: String
+      connectionParams: String,
+      replicaConfig: Option[MySqlConnectionConfig] = None
   ) extends ConnectionConfig {
+    override def replica[C <: MySqlConnectionConfig]: Option[C] = replicaConfig.map(_.asInstanceOf[C])
+
     override def toCommonFormat: CommonConnectionReadableData = {
       CommonConnectionReadableData("mysql", s"$host:$port", dbName, dbUser)
     }
